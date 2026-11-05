@@ -208,6 +208,9 @@ choice BOARD_TYPE
     config BOARD_TYPE_ELECTRON_BOT
         bool "ElectronBot"
         depends on IDF_TARGET_ESP32S3
+    config BOARD_TYPE_ESP32_2432S028
+        bool "ESP32-2432S028 CYD2USB (Cheap Yellow Display, ST7789)"
+        depends on IDF_TARGET_ESP32
     config BOARD_TYPE_ESP32_P4_FUNCTION_EV_BOARD
         bool "Espressif ESP32-P4/P4X-Function-EV-Board"
         depends on IDF_TARGET_ESP32P4

@@ -748,6 +748,10 @@ elseif(CONFIG_BOARD_TYPE_ATK_DNESP32S3_BOX3)
     set(BUILTIN_TEXT_FONT font_noto_sans_basic_20_4)
     set(BUILTIN_ICON_FONT font_material_symbols_20_4)
     set(DEFAULT_EMOJI_COLLECTION noto-color-emoji_64)
+elseif(CONFIG_BOARD_TYPE_ESP32_2432S028)
+    set(BOARD_DIR "esp32-2432s028")
+    set(BUILTIN_TEXT_FONT font_noto_sans_basic_14_1)
+    set(BUILTIN_ICON_FONT font_material_symbols_14_1)
 elseif(CONFIG_BOARD_TYPE_DU_CHATX)
     set(BOARD_DIR "du-chatx")
     set(BUILTIN_TEXT_FONT font_noto_sans_basic_16_4)
@@ -1184,6 +1188,13 @@ if(CONFIG_BOARD_TYPE_ESP_VOCAT AND IDF_VERSION_MAJOR LESS 6)
     list(APPEND MAIN_PRIV_REQUIRES_EXTRA
         espressif__touch_slider_sensor
         espressif__touch_button_sensor
+    )
+endif()
+# Component requirements are resolved during early expansion, before CONFIG_*
+# exists, so gate the DAC driver (used by esp32-2432s028) on the target instead.
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND MAIN_PRIV_REQUIRES_EXTRA
+        esp_driver_dac
     )
 endif()
 if(CONFIG_BOARD_TYPE_ESP32_P4_FUNCTION_EV_BOARD)

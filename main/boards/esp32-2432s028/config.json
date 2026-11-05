@@ -1,0 +1,10 @@
+{
+    "type": "esp32-2432s028",
+    "target": "esp32",
+    "builds": [
+        {
+            "name": "esp32-2432s028",
+            "sdkconfig_append": []
+        }
+    ]
+}
