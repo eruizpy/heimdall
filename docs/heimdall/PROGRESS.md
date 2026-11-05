@@ -5,7 +5,8 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 ## Estado actual
 
 - **Etapa:** la placa `esp32-2432s028` (CYD2USB) compila; falta probarla en el hardware.
-- **Próximo paso:** conectar el INMP441, grabar el firmware y verificar la pantalla (orientación y colores), el micrófono y el parlante.
+- **Próximo paso:** avanzar sin el hardware de audio ni la batería (todavía no comprados): probar la pantalla con la placa sola, el táctil y la personalización.
+- **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028`
 
 ## Decisiones
