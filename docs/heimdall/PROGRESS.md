@@ -9,6 +9,34 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028`
 
+## Retomar en la MacBook
+
+Próxima sesión: probar la placa (solo la pantalla, sin micrófono ni parlante) desde la MacBook.
+
+```sh
+# Una sola vez: dependencias y ESP-IDF v6.1
+xcode-select --install            # si falta
+brew install cmake ninja dfu-util python3
+mkdir -p ~/esp && cd ~/esp
+git clone -b release/v6.1 --recursive --depth 1 --shallow-submodules https://github.com/espressif/esp-idf.git esp-idf-v6.1
+cd esp-idf-v6.1 && ./install.sh esp32
+
+# Cada sesión
+cd ~/ruta/a/heimdall && git pull --ff-only origin main
+. ~/esp/esp-idf-v6.1/export.sh
+python3 scripts/build.py esp32-2432s028 --name esp32-2432s028
+ls /dev/cu.*                      # puerto: /dev/cu.usbserial-* o /dev/cu.wchusbserial-*
+idf.py -p /dev/cu.usbserial-XXXX flash monitor   # salir con Ctrl+]
+```
+
+Qué verificar:
+- **Pantalla:** orientación, espejado y colores. Si algo falla, ajustar `DISPLAY_MIRROR_X/Y`, `DISPLAY_INVERT_COLOR` o `DISPLAY_RGB_ORDER` en `main/boards/esp32-2432s028/config.h`.
+- **WiFi:** el portal de configuración y la conexión.
+- **Botón BOOT:** que cambie el estado del chat.
+- **Monitor serie:** que no haya errores de memoria ni reinicios.
+
+Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recientes suele venir incluido). Probar otro cable USB-C que transmita datos.
+
 ## Decisiones
 
 | Fecha | Decisión |
