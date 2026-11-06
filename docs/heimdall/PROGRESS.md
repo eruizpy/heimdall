@@ -7,7 +7,7 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 - **Etapa:** la placa `esp32-2432s028` (CYD2USB) compila; falta probarla en el hardware.
 - **Próximo paso:** avanzar sin el hardware de audio ni la batería (todavía no comprados): probar la pantalla con la placa sola, el táctil y la personalización.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
-- **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028`
+- **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
 ## Retomar en la MacBook
 
@@ -24,14 +24,15 @@ cd esp-idf-v6.1 && ./install.sh esp32
 # Cada sesión
 cd ~/ruta/a/heimdall && git pull --ff-only origin main
 . ~/esp/esp-idf-v6.1/export.sh
-python3 scripts/build.py esp32-2432s028 --name esp32-2432s028
+python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 ls /dev/cu.*                      # puerto: /dev/cu.usbserial-* o /dev/cu.wchusbserial-*
 idf.py -p /dev/cu.usbserial-XXXX flash monitor   # salir con Ctrl+]
 ```
 
 Qué verificar:
 - **Pantalla:** orientación, espejado y colores. Si algo falla, ajustar `DISPLAY_MIRROR_X/Y`, `DISPLAY_INVERT_COLOR` o `DISPLAY_RGB_ORDER` en `main/boards/esp32-2432s028/config.h`.
-- **WiFi:** el portal de configuración y la conexión.
+- **WiFi:** la placa crea la red `Heimdall-XXXX`; conectarse a ella y configurar el WiFi de casa.
+- **Servidor:** la pantalla muestra un código de 6 dígitos; activar el dispositivo en xiaozhi.me (ver "Servidor" abajo).
 - **Botón BOOT:** que cambie el estado del chat.
 - **Monitor serie:** que no haya errores de memoria ni reinicios.
 
@@ -47,6 +48,23 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-05 | Placa: ESP32-2432S028 **CYD2USB** (micro-USB + USB-C, pantalla ST7789). Nueva placa en `main/boards/esp32-2432s028/`. |
 | 2026-11-05 | Audio v1: micrófono INMP441 (SCK 22, WS 27, SD 35) en I2S1 + parlante de la placa vía DAC interno GPIO26 (driver propio `DacAudioCodec`). |
 | 2026-11-05 | `esp_driver_dac` se agrega según `IDF_TARGET` (esp32): los `CONFIG_*` no existen en la early expansion de CMake. |
+| 2026-11-06 | Idioma del dispositivo: español (`--language es-ES` al compilar; no va en el config.json de la placa). |
+| 2026-11-06 | Servidor: el oficial xiaozhi.me por ahora; más adelante, uno propio (la URL ya es configurable). |
+| 2026-11-06 | Red WiFi de configuración y hostname: `Heimdall-XXXX` (`boards/common/wifi_board.cc`, afecta a todas las placas). |
+
+## Servidor
+
+**Fase actual: servidor oficial xiaozhi.me** (la URL por defecto del firmware, `https://api.tenclass.net/xiaozhi/ota/`).
+
+1. Crear una cuenta en https://xiaozhi.me y entrar a la consola.
+2. Crear un agente con nombre **Heimdall**, idioma español, una voz en español, y escribir su personalidad (rol/prompt).
+3. Encender la placa con WiFi: la pantalla muestra un código de 6 dígitos. Agregar el dispositivo en la consola con ese código y asignarle el agente.
+
+El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en la consola, no en el firmware.
+
+**Fase futura: servidor propio** (por ejemplo xiaozhi-esp32-server, en una PC o un VPS). La URL ya es configurable sin cambiar código:
+- al compilar: `CONFIG_OTA_URL` (menuconfig → Xiaozhi Assistant → Default OTA URL);
+- sin recompilar: el firmware usa primero la clave NVS `wifi/ota_url` si está guardada.
 
 ## Configuración por equipo
 
@@ -64,10 +82,18 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 - [ ] Batería: LiPo 1S + módulo de carga USB-C con salida de 5 V (en evaluación, ver bitácora).
 - [ ] Táctil XPT2046 (CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36).
 - [ ] Palabra de activación (desactivada para el ESP32 clásico; hoy se usa el botón BOOT).
-- [ ] Definir el nombre/identidad del asistente, el servidor y el idioma (el build usa en-US por defecto).
+- [x] Idioma (es-ES) y servidor (xiaozhi.me por ahora).
+- [ ] Crear el agente Heimdall en xiaozhi.me y activar el dispositivo (cuando se pruebe la placa).
+- [ ] Revisar si `welcome.ogg` u otros sonidos dicen "Xiaozhi" y reemplazarlos.
+- [ ] Servidor propio (fase futura).
 - [ ] Instalar clang-format para formatear el código modificado.
 
 ## Bitácora
+
+### 2026-11-06 — Ubuntu (personalización)
+- Red WiFi de configuración/hostname cambiada a `Heimdall-XXXX`.
+- Se compila con `--language es-ES` (compila bien; el firmware ocupa 1,9 MB, con 35 % libre).
+- Se documentaron la activación en xiaozhi.me y cómo migrar a un servidor propio.
 
 ### 2026-11-05 — Ubuntu (placa)
 - Se creó la placa `esp32-2432s028`: pantalla ST7789 320x240 en HSPI, retroiluminación en GPIO21, botón BOOT, LED RGB apagado.

@@ -30,7 +30,7 @@ Speaker: connector P4 (onboard amplifier, internal DAC on GPIO26).
 ## Build
 
 ```sh
-python3 scripts/build.py esp32-2432s028 --name esp32-2432s028
+python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 ```
 
 ## Notes
