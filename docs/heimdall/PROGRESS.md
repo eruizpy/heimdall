@@ -8,7 +8,7 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 - **Servidor propio:** desplegado en `<dominio>` (ver `deploy/vps/README.md`); el firmware ya apunta a `https://<dominio>/xiaozhi/ota/`.
 - **Probar sin micrófono:** `python3 scripts/heimdall_ask.py "pregunta"` manda texto por el puerto serie y muestra la respuesta (con el entorno de ESP-IDF cargado).
 - **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real.
-- **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
+- **Robot (plan):** CYD como cara táctil + ESP32-S3 como core (voz, cabeza pan-tilt, hexápodo de 18 servos). Arquitectura y compras en `docs/heimdall/compras.md`: compra A (voz y cabeza) en noviembre 2026, compra B (hexápodo) en diciembre 2026.
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
 ## Retomar en la MacBook
@@ -60,6 +60,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | OpenAI como LLM descartado por ahora: el proveedor `openai` del servidor no puede enviar `reasoning_effort: none` (requerido para funciones en Chat Completions con los modelos GPT-6). Haría falta un parche propio. |
 | 2026-11-09 | La placa usa `CONFIG_OTA_URL=https://<dominio>/xiaozhi/ota/` (en `config.json`); xiaozhi.me ya no se usa. |
 | 2026-11-09 | Caddy usa certificados RSA-2048 (`key_type rsa2048`): la ESP32 acelera RSA por hardware pero verifica la cadena ECDSA P-384 de Let's Encrypt por software (~3 s por conexión TLS). |
+| 2026-11-09 | Robot: la CYD pasa a ser la cara (pantalla + touch con coordenadas) conectada por UART (CN1) a un core ESP32-S3 N16R8 con voz, cabeza pan-tilt (2 servos por LEDC) y hexápodo (18 MG90S por 2× PCA9685). La CYD standalone actual se conserva como variante. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
 ## Servidor
