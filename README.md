@@ -16,7 +16,32 @@ Asistente de voz con IA sobre ESP32 que evoluciona hacia un **robot de escritori
 | Hexápodo de 18 servos: cinemática inversa, marcha trípode, control por voz | ⏳ Compra B |
 | Migración del servidor a AWS IoT (ver [Migración a AWS](#migración-a-aws)) | 📋 Planificada |
 
-**Versión actual: 0.1.0** ([CHANGELOG](CHANGELOG.md)). El detalle del avance, las decisiones y la bitácora están en [docs/heimdall/PROGRESS.md](docs/heimdall/PROGRESS.md); las especificaciones de cada funcionalidad, en [docs/specs](docs/specs/README.md).
+**Versión actual: 0.2.0** ([CHANGELOG](CHANGELOG.md), [releases](https://github.com/eruizpy/heimdall/releases)). El detalle del avance, las decisiones y la bitácora están en [docs/heimdall/PROGRESS.md](docs/heimdall/PROGRESS.md); las especificaciones de cada funcionalidad, en [docs/specs](docs/specs/README.md).
+
+## Puesta en marcha rápida
+
+Cada [release](https://github.com/eruizpy/heimdall/releases) trae un paquete para **macOS** y otro para **Linux** con los firmwares listos para grabar en la ESP32-2432S028, el script de grabación (no necesita ESP-IDF), las herramientas de prueba y el instalador del entorno de desarrollo.
+
+```sh
+# 1. Descargar y descomprimir (o bajarlo desde la página de releases)
+gh release download v0.2.0 --repo eruizpy/heimdall --pattern "*-macos.tar.gz"   # o *-linux.tar.gz
+tar -xzf heimdall-v0.2.0-macos.tar.gz && cd heimdall-v0.2.0-macos
+
+# 2. Grabar la placa (crea su propio entorno Python con esptool)
+./flash.sh assistant          # asistente de voz
+./flash.sh face               # cara del robot
+
+# 3. Probar sin micrófono
+.venv/bin/python tools/heimdall_ask.py "Hola"
+.venv/bin/python tools/heimdall_face.py demo
+
+# 4. Entorno de desarrollo completo (dependencias, ESP-IDF v6.1, clang-format, repo, hook)
+./setup-dev.sh
+```
+
+- Después de grabar el asistente: conectarse a la red `Heimdall-XXXX`, abrir `http://192.168.4.1`, elegir el WiFi de 2,4 GHz y cargar en **"Custom OTA URL"** la URL de OTA del servidor (consola → Parámetros → `server.ota`). Los firmwares publicados no traen ningún servidor propio configurado.
+- Grabar con `flash.sh` deja la placa como nueva: se borran el WiFi guardado y la calibración del touch.
+- Desde un clon del repositorio, el entorno se prepara con `tools/setup-macos.sh` o `tools/setup-linux.sh` (`--dry-run` muestra los pasos).
 
 ## Funcionalidades
 
@@ -256,6 +281,8 @@ Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](d
 | `scripts/heimdall_ask.py` | Enviar preguntas de texto al asistente por puerto serie |
 | `scripts/heimdall_face.py` | Simular al core frente a la cara (demo, monitor, comandos) |
 | `scripts/ci.sh` | CI local: tests, formato y compilación de los firmwares |
+| `scripts/package_release.py` | Arma los paquetes de release para macOS y Linux en `dist/` |
+| `tools/` | Grabación sin ESP-IDF (`flash.sh`), instaladores del entorno (`setup-macos.sh`, `setup-linux.sh`) y guía del paquete |
 | `.githooks/` | Hook de pre-push que corre el CI rápido |
 | `docs/heimdall/` | Progreso, compras y protocolo de la cara |
 | `docs/specs/` | Especificaciones (SDD): requisitos, plan y tareas por funcionalidad |
@@ -284,6 +311,14 @@ git config core.hooksPath .githooks
 ```
 
 El proyecto sigue un ciclo **SDLC con SDD y TDD**: cada funcionalidad tiene especificación, plan y tareas en [docs/specs](docs/specs/README.md) y los tests se escriben antes que el código. El CI es **local** (sin GitHub Actions): `scripts/ci.sh` corre tests, formato y compilación de los dos firmwares, y el hook de pre-push corre la versión rápida (activarlo una vez por clon con `git config core.hooksPath .githooks`). Cambios por versión en [CHANGELOG.md](CHANGELOG.md).
+
+Publicar una versión (firmwares sin URL propia, paquetes y checksums en `dist/`):
+
+```sh
+unset HEIMDALL_OTA_URL
+python3 scripts/package_release.py --version X.Y.Z
+gh release create vX.Y.Z dist/*.tar.gz dist/SHA256SUMS --title "Heimdall vX.Y.Z" --notes-file <notas>
+```
 
 Probar sin micrófono:
 

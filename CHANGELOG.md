@@ -4,8 +4,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.2.0] — 2026-11-09
+
+Paquetes de release para que un colaborador ponga en marcha Heimdall en minutos (spec 008).
+
+### Agregado
+- Paquetes `heimdall-v0.2.0-macos.tar.gz` y `heimdall-v0.2.0-linux.tar.gz`: firmwares precompilados del asistente y de la cara, `flash.sh` (graba sin ESP-IDF, con `esptool` 5.6.0 y `pyserial` 3.5 fijados y verificación de checksum), herramientas de prueba, instalador del entorno de desarrollo por sistema y `SHA256SUMS`.
+- `tools/setup-macos.sh` y `tools/setup-linux.sh`: dependencias del sistema, ESP-IDF `release/v6.1`, `clang-format` 23.1.5, clon del repositorio y hook de pre-push; con `--dry-run`.
+- `scripts/package_release.py`: compila los firmwares sin URL propia y arma los paquetes; se niega a correr con `HEIMDALL_OTA_URL` definida.
+- README: sección de puesta en marcha rápida y cómo publicar una versión.
+
 ### Cambiado
-- El CI pasa a ser local: `scripts/ci.sh` (tests, formato y firmwares) y el hook `.githooks/pre-push`. El proyecto no usa GitHub Actions.
+- El CI pasa a ser local: `scripts/ci.sh` (tests, formato y firmwares) y el hook `.githooks/pre-push`. El proyecto no usa GitHub Actions (desactivado en el repositorio).
 
 ### Corregido
 - `scripts/ci.sh` borra las variables de entorno de git que exporta un hook: dentro del pre-push, los tests que crean repos temporales actuaban sobre el repo real (marcaron `core.bare=true` y cambiaron `user.name`).
@@ -33,5 +43,6 @@ Primera versión de Heimdall: asistente de voz en la ESP32-2432S028 con servidor
 - La cara se congelaba al recibir una emoción vacía (`{"t":"emo","v":""}`): bucle infinito en la búsqueda de palabras. Encontrado por un test nuevo.
 - La lectura serie esperaba a llenar el búfer antes de procesar una línea.
 
-[Sin publicar]: https://github.com/eruizpy/heimdall/compare/v0.1.0...HEAD
+[Sin publicar]: https://github.com/eruizpy/heimdall/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/eruizpy/heimdall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/eruizpy/heimdall/releases/tag/v0.1.0

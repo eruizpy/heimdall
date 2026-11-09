@@ -115,6 +115,12 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 
 ## Bitácora
 
+### 2026-11-09 — MacBook (release v0.2.0)
+- Spec 008: paquetes de release para macOS y Linux (`scripts/package_release.py`, `tools/flash.sh`, `tools/setup-*.sh`). 15 tests nuevos en `scripts/tests/test_package_release.py`.
+- Paquetes armados desde el código sin `HEIMDALL_OTA_URL`: el dominio y la IP no aparecen en ningún archivo. HIL: `./flash.sh face` desde el paquete de macOS grabó la placa y respondió `pong`.
+- Grabar la imagen completa borra la NVS: se pierden el WiFi y la calibración (documentado).
+- Release publicado en GitHub con los dos paquetes y `SHA256SUMS`.
+
 ### 2026-11-09 — MacBook (hook de pre-push)
 - El primer push con el hook falló y además los tests de `test_ci_selection` (que crean repos temporales) heredaron `GIT_DIR` del hook y modificaron la configuración del repo: `core.bare=true` y `user.name`/`user.email` = "CI test". Se restauró a mano (`core.bare=false`, `eruizpy <eruizpy@gmail.com>`); commits y ramas intactos, `git fsck` limpio.
 - Corrección: `scripts/ci.sh` hace `unset $(git rev-parse --local-env-vars)` al empezar. Verificado en un clon descartable con el entorno de un hook.
