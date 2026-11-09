@@ -1,0 +1,6 @@
+dependencies:
+  idf: ">=6.0"
+  lvgl/lvgl: "~9.5.0"
+  espressif/esp_lvgl_port: "~2.9.0"
+  espressif/cjson: "~1.7.19"
+  78/xiaozhi-fonts: "~2.0.0"

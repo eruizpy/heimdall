@@ -8,6 +8,7 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 - **Servidor propio:** desplegado en `<dominio>` (ver `deploy/vps/README.md`); el firmware ya apunta a `https://<dominio>/xiaozhi/ota/`.
 - **Probar sin micrófono:** `python3 scripts/heimdall_ask.py "pregunta"` manda texto por el puerto serie y muestra la respuesta (con el entorno de ESP-IDF cargado).
 - **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real.
+- **Cara del robot (etapa 1, hecha):** firmware `face/` en la CYD: ojos animados, textos, touch calibrado y protocolo UART (`docs/heimdall/face-protocol.md`). Probar con `python3 scripts/heimdall_face.py demo`. La CYD hoy tiene este firmware, no el Heimdall autónomo.
 - **Robot (plan):** CYD como cara táctil + ESP32-S3 como core (voz, cabeza pan-tilt, hexápodo de 18 servos). Arquitectura y compras en `docs/heimdall/compras.md`: compra A (voz y cabeza) en noviembre 2026, compra B (hexápodo) en diciembre 2026.
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -110,6 +111,12 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (cara del robot)
+- Nuevo proyecto ESP-IDF `face/` para la CYD: ST7789 + LVGL 9.5, ojos dibujados a mano (sin transformaciones: no hay PSRAM), 10 expresiones con nombres de xiaozhi, parpadeo y miradas automáticas, ojos que siguen el dedo.
+- Touch XPT2046 en SPI3 con calibración de 3 puntos guardada en NVS; eventos tap, long y swipe.
+- Enlace UART: USB (desarrollo) y CN1 GPIO27 TX / GPIO22 RX (core), JSON por línea a 115200.
+- `scripts/heimdall_face.py` simula al core (monitor, send, demo). Probado en la placa: hello, ping, expresiones y tap.
 
 ### 2026-11-09 — MacBook (latencia de conexión)
 - Diagnóstico con tcpdump en el VPS: sin pérdida de SYN ni problema de DNS. Dos causas: (1) `SendTextQuery` conectaba con el WiFi en `MAX_MODEM` (cada ida y vuelta esperaba el intervalo de escucha de ~1 s); ahora pasa a `PERFORMANCE` antes, como la palabra de activación. (2) ~3,4 s de criptografía en la ESP32 verificando la cadena ECDSA.
