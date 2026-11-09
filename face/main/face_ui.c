@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board_pins.h"
+#include "face_expr.h"
 #include "lvgl.h"
 
 LV_FONT_DECLARE(font_noto_sans_basic_20_4);
@@ -18,34 +19,6 @@ LV_FONT_DECLARE(font_noto_sans_basic_16_4);
 #define EYE_DX 62
 #define TICK_MS 30
 
-typedef struct {
-    float w, h;
-    float top;     // px of the eye covered by the upper lid
-    float bottom;  // px covered from below by a round lid (happy "^ ^" eyes)
-    float angle;   // upper lid slant in degrees: > 0 angry (inner side down), < 0 sad
-} shape_t;
-
-typedef struct {
-    const char* names;  // xiaozhi emotion names, space separated
-    uint32_t color;
-    shape_t shape;
-    float look_x, look_y;  // -1..1
-    bool wink;
-} expression_t;
-
-static const expression_t kExpressions[] = {
-    {"neutral relaxed cool confident", 0x22D3EE, {70, 96, 0, 0, 0}, 0, 0, false},
-    {"happy laughing funny delicious silly", 0x22D3EE, {74, 96, 0, 42, 0}, 0, 0, false},
-    {"sad crying", 0x60A5FA, {70, 86, 30, 0, -18}, 0, 0.4f, false},
-    {"angry", 0xF43F5E, {72, 90, 34, 0, 22}, 0, 0, false},
-    {"surprised shocked", 0x22D3EE, {84, 106, 0, 0, 0}, 0, 0, false},
-    {"thinking confused", 0x22D3EE, {66, 88, 18, 0, 0}, -0.7f, -0.7f, false},
-    {"sleepy", 0x22D3EE, {72, 96, 64, 0, 0}, 0, 0.3f, false},
-    {"loving kissy", 0xF472B6, {72, 92, 0, 30, 0}, 0, 0, false},
-    {"winking", 0x22D3EE, {72, 96, 0, 30, 0}, 0, 0, true},
-    {"embarrassed", 0xFB7185, {70, 88, 0, 26, 0}, 0, 0.6f, false},
-};
-
 static lv_obj_t* s_eyes[2];
 static lv_obj_t* s_status;
 static lv_obj_t* s_text;
@@ -54,7 +27,7 @@ static lv_obj_t* s_calib_h;
 static lv_obj_t* s_calib_v;
 static lv_obj_t* s_calib_label;
 
-static shape_t s_cur, s_target;
+static face_shape_t s_cur, s_target;
 static lv_color_t s_color;
 static bool s_wink;
 static float s_look_x, s_look_y;    // current, px
@@ -287,26 +260,8 @@ void face_ui_create(void) {
 
 void face_ui_set_event_cb(face_event_cb_t cb) { s_event_cb = cb; }
 
-static bool has_word(const char* list, const char* word) {
-    size_t n = strlen(word);
-    for (const char* p = list; (p = strstr(p, word)) != NULL; p += n) {
-        bool start = p == list || p[-1] == ' ';
-        bool end = p[n] == '\0' || p[n] == ' ';
-        if (start && end) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void face_ui_set_emotion(const char* name) {
-    const expression_t* ex = &kExpressions[0];
-    for (size_t i = 0; i < sizeof(kExpressions) / sizeof(kExpressions[0]); i++) {
-        if (name && has_word(kExpressions[i].names, name)) {
-            ex = &kExpressions[i];
-            break;
-        }
-    }
+    const face_expression_t* ex = face_expr_find(name);
     s_target = ex->shape;
     s_color = lv_color_hex(ex->color);
     s_wink = ex->wink;

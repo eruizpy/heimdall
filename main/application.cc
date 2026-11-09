@@ -1,4 +1,5 @@
 #include "application.h"
+#include "text_query.h"
 #include "assets.h"
 #include "assets/lang_config.h"
 #include "audio_codec.h"
@@ -1391,13 +1392,7 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
 }
 
 void Application::SendTextQuery(const std::string& text) {
-    // Protocol::SendWakeWordDetected() builds JSON by concatenation: keep only safe characters.
-    std::string query;
-    for (unsigned char c : text) {
-        if (c >= 0x20 && c != '"' && c != '\\') {
-            query += static_cast<char>(c);
-        }
-    }
+    std::string query = SanitizeTextQuery(text);
     if (query.empty()) {
         return;
     }

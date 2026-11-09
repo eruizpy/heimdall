@@ -20,7 +20,21 @@ except ImportError:
     sys.exit("pyserial is missing: run '. ~/esp/esp-idf-v6.1/export.sh' first or 'pip install pyserial'")
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
-INTERESTING = re.compile(r"Text query|>> |<< |State: |Text query ignored|E \(")
+INTERESTING = re.compile(r"Text query|>> |<< |State: |Text query ignored|^E \(")
+
+
+def clean_line(raw):
+    """Decode one log line from the board and strip color codes and the trailing CR."""
+    return ANSI.sub("", raw.decode("utf-8", errors="replace")).strip()
+
+
+def is_relevant(line):
+    """Lines worth showing: the query, what the server understood, the reply and errors."""
+    return bool(line) and bool(INTERESTING.search(line))
+
+
+def is_reply_done(line):
+    return "State: speaking -> idle" in line
 
 
 def default_port():
@@ -53,10 +67,10 @@ def main():
             buffer += ser.read(4096)
             *lines, buffer = buffer.split(b"\n")
             for raw in lines:
-                line = ANSI.sub("", raw.decode("utf-8", errors="replace")).strip()
-                if INTERESTING.search(line):
+                line = clean_line(raw)
+                if is_relevant(line):
                     print(line)
-                if "State: speaking -> idle" in line:
+                if is_reply_done(line):
                     spoke = True
             if spoke:
                 break

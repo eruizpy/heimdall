@@ -12,6 +12,7 @@
 #include "board_pins.h"
 #include "face_ui.h"
 #include "link.h"
+#include "touch_calib.h"
 
 #define TAG "touch"
 
@@ -24,15 +25,14 @@
 
 #define CALIB_MAGIC 0x48454931  // "HEI1"
 
+// NVS blob; same layout as before the calibration math moved to touch_calib.c.
 typedef struct {
     uint32_t magic;
-    int16_t x0, x1;  // raw value at screen x = 0 and x = LCD_H_RES
-    int16_t y0, y1;  // raw value at screen y = 0 and y = LCD_V_RES
-    uint8_t swap;    // raw x/y swapped relative to the screen
-} calib_t;
+    touch_calib_t cal;
+} calib_blob_t;
 
 static spi_device_handle_t s_spi;
-static calib_t s_calib = {CALIB_MAGIC, 200, 3700, 240, 3800, 0};  // rough CYD defaults
+static touch_calib_t s_calib = {200, 3700, 240, 3800, 0};  // rough CYD defaults
 static bool s_has_calib;
 static volatile bool s_calibrating;
 static int s_last_raw_x, s_last_raw_y;
@@ -75,16 +75,8 @@ static bool read_raw(int* rx, int* ry) {
     return gpio_get_level(PIN_TOUCH_IRQ) == 0;
 }
 
-static int clampi(int v, int lo, int hi) { return v < lo ? lo : (v > hi ? hi : v); }
-
 static void raw_to_screen(int rx, int ry, int* sx, int* sy) {
-    if (s_calib.swap) {
-        int t = rx;
-        rx = ry;
-        ry = t;
-    }
-    *sx = clampi((rx - s_calib.x0) * LCD_H_RES / (s_calib.x1 - s_calib.x0), 0, LCD_H_RES - 1);
-    *sy = clampi((ry - s_calib.y0) * LCD_V_RES / (s_calib.y1 - s_calib.y0), 0, LCD_V_RES - 1);
+    touch_calib_map(&s_calib, rx, ry, LCD_H_RES, LCD_V_RES, sx, sy);
 }
 
 static void indev_read_cb(lv_indev_t* indev, lv_indev_data_t* data) {
@@ -108,11 +100,11 @@ static void load_calibration(void) {
     if (nvs_open("face", NVS_READONLY, &nvs) != ESP_OK) {
         return;
     }
-    calib_t c;
-    size_t len = sizeof(c);
-    if (nvs_get_blob(nvs, "calib", &c, &len) == ESP_OK && len == sizeof(c) &&
-        c.magic == CALIB_MAGIC && c.x1 != c.x0 && c.y1 != c.y0) {
-        s_calib = c;
+    calib_blob_t blob;
+    size_t len = sizeof(blob);
+    if (nvs_get_blob(nvs, "calib", &blob, &len) == ESP_OK && len == sizeof(blob) &&
+        blob.magic == CALIB_MAGIC && blob.cal.x1 != blob.cal.x0 && blob.cal.y1 != blob.cal.y0) {
+        s_calib = blob.cal;
         s_has_calib = true;
     }
     nvs_close(nvs);
@@ -123,7 +115,8 @@ static void save_calibration(void) {
     if (nvs_open("face", NVS_READWRITE, &nvs) != ESP_OK) {
         return;
     }
-    nvs_set_blob(nvs, "calib", &s_calib, sizeof(s_calib));
+    const calib_blob_t blob = {.magic = CALIB_MAGIC, .cal = s_calib};
+    nvs_set_blob(nvs, "calib", &blob, sizeof(blob));
     nvs_commit(nvs);
     nvs_close(nvs);
 }
@@ -154,39 +147,22 @@ static void wait_tap(int* rx, int* ry) {
 static void calibration_task(void* arg) {
     static const int targets[3][2] = {{30, 30}, {LCD_H_RES - 30, 30}, {30, LCD_V_RES - 30}};
     int raw[3][2];
+    touch_calib_t c;
 
     s_calibrating = true;
-    for (int i = 0; i < 3; i++) {
-        if (lvgl_port_lock(0)) {
-            face_ui_show_calibration_target(targets[i][0], targets[i][1], i + 1, 3);
-            lvgl_port_unlock();
-        }
-        wait_tap(&raw[i][0], &raw[i][1]);
-    }
-
-    // Moving along the screen x axis (target 1 -> 2): whichever raw axis changes more is x.
-    int dxr = abs(raw[1][0] - raw[0][0]);
-    int dyr = abs(raw[1][1] - raw[0][1]);
-    calib_t c = {.magic = CALIB_MAGIC, .swap = dyr > dxr};
-    if (c.swap) {
+    do {  // repeat until the three taps give a usable calibration
         for (int i = 0; i < 3; i++) {
-            int t = raw[i][0];
-            raw[i][0] = raw[i][1];
-            raw[i][1] = t;
+            if (lvgl_port_lock(0)) {
+                face_ui_show_calibration_target(targets[i][0], targets[i][1], i + 1, 3);
+                lvgl_port_unlock();
+            }
+            wait_tap(&raw[i][0], &raw[i][1]);
         }
-    }
-    float sx = (float)(raw[1][0] - raw[0][0]) / (targets[1][0] - targets[0][0]);
-    float sy = (float)(raw[2][1] - raw[0][1]) / (targets[2][1] - targets[0][1]);
-    c.x0 = raw[0][0] - (int)(targets[0][0] * sx);
-    c.x1 = c.x0 + (int)(LCD_H_RES * sx);
-    c.y0 = raw[0][1] - (int)(targets[0][1] * sy);
-    c.y1 = c.y0 + (int)(LCD_V_RES * sy);
+    } while (!touch_calib_compute(targets, raw, LCD_H_RES, LCD_V_RES, &c));
 
-    if (c.x1 != c.x0 && c.y1 != c.y0) {
-        s_calib = c;
-        s_has_calib = true;
-        save_calibration();
-    }
+    s_calib = c;
+    s_has_calib = true;
+    save_calibration();
     ESP_LOGW(TAG, "calibration: swap=%d x %d..%d y %d..%d", c.swap, c.x0, c.x1, c.y0, c.y1);
 
     if (lvgl_port_lock(0)) {

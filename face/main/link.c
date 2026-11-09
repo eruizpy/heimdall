@@ -3,7 +3,6 @@
 #include <driver/uart.h>
 #include <esp_log.h>
 #include <esp_lvgl_port.h>
-#include <cJSON.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
@@ -12,6 +11,7 @@
 
 #include "board_pins.h"
 #include "display.h"
+#include "face_proto.h"
 #include "face_ui.h"
 #include "touch.h"
 
@@ -39,53 +39,48 @@ static void on_face_event(const char* ev, int x, int y) {
     int rx, ry;
     touch_get_last_raw(&rx, &ry);
     char buf[128];
-    snprintf(buf, sizeof(buf), "{\"t\":\"touch\",\"ev\":\"%s\",\"x\":%d,\"y\":%d,\"raw\":[%d,%d]}",
-             ev, x, y, rx, ry);
-    link_send(buf);
+    if (face_proto_format_touch(buf, sizeof(buf), ev, x, y, rx, ry) > 0) {
+        link_send(buf);
+    }
 }
 
-static const char* str_field(const cJSON* root, const char* key) {
-    const cJSON* item = cJSON_GetObjectItem(root, key);
-    return cJSON_IsString(item) ? item->valuestring : NULL;
-}
-
-static double num_field(const cJSON* root, const char* key, double fallback) {
-    const cJSON* item = cJSON_GetObjectItem(root, key);
-    return cJSON_IsNumber(item) ? item->valuedouble : fallback;
-}
+// The command struct (~240 bytes) lives in static storage: each reader task handles one
+// line at a time, and the two readers are serialized by this mutex.
+static SemaphoreHandle_t s_dispatch_mutex;
 
 static void handle_line(const char* line) {
-    cJSON* root = cJSON_Parse(line);
-    if (root == NULL) {
-        return;  // logs or noise
-    }
-    const char* t = str_field(root, "t");
-    if (t == NULL) {
-        cJSON_Delete(root);
-        return;
-    }
-
-    if (strcmp(t, "ping") == 0) {
-        link_send("{\"t\":\"pong\"}");
-    } else if (strcmp(t, "calibrate") == 0) {
-        touch_start_calibration();
-    } else if (strcmp(t, "bright") == 0) {
-        display_set_brightness((int)num_field(root, "v", 80));
-    } else if (lvgl_port_lock(0)) {
-        if (strcmp(t, "emo") == 0) {
-            face_ui_set_emotion(str_field(root, "v"));
-        } else if (strcmp(t, "status") == 0) {
-            face_ui_set_status(str_field(root, "v"));
-        } else if (strcmp(t, "text") == 0) {
-            face_ui_set_text(str_field(root, "role"), str_field(root, "v"));
-        } else if (strcmp(t, "look") == 0) {
-            face_ui_look((float)num_field(root, "x", 0), (float)num_field(root, "y", 0));
-        } else if (strcmp(t, "blink") == 0) {
-            face_ui_blink();
+    static face_cmd_t cmd;
+    xSemaphoreTake(s_dispatch_mutex, portMAX_DELAY);
+    if (face_proto_parse(line, &cmd)) {  // logs, noise and unknown commands are ignored
+        switch (cmd.type) {
+            case FACE_CMD_PING:
+                link_send("{\"t\":\"pong\"}");
+                break;
+            case FACE_CMD_CALIBRATE:
+                touch_start_calibration();
+                break;
+            case FACE_CMD_BRIGHT:
+                display_set_brightness(cmd.value);
+                break;
+            default:
+                if (lvgl_port_lock(0)) {
+                    if (cmd.type == FACE_CMD_EMO) {
+                        face_ui_set_emotion(cmd.text);
+                    } else if (cmd.type == FACE_CMD_STATUS) {
+                        face_ui_set_status(cmd.text);
+                    } else if (cmd.type == FACE_CMD_TEXT) {
+                        face_ui_set_text(cmd.role, cmd.text);
+                    } else if (cmd.type == FACE_CMD_LOOK) {
+                        face_ui_look(cmd.x, cmd.y);
+                    } else if (cmd.type == FACE_CMD_BLINK) {
+                        face_ui_blink();
+                    }
+                    lvgl_port_unlock();
+                }
+                break;
         }
-        lvgl_port_unlock();
     }
-    cJSON_Delete(root);
+    xSemaphoreGive(s_dispatch_mutex);
 }
 
 static void reader_task(void* arg) {
@@ -122,6 +117,7 @@ static void reader_task(void* arg) {
 
 void link_init(void) {
     s_tx_mutex = xSemaphoreCreateMutex();
+    s_dispatch_mutex = xSemaphoreCreateMutex();
 
     const uart_config_t cfg = {
         .baud_rate = LINK_BAUD,
