@@ -4,8 +4,8 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 
 ## Estado actual
 
-- **Etapa:** la placa `esp32-2432s028` (CYD2USB) compila; falta probarla en el hardware.
-- **Próximo paso:** avanzar sin el hardware de audio ni la batería (todavía no comprados): probar la pantalla con la placa sola, el táctil y la personalización.
+- **Etapa:** la placa `esp32-2432s028` (CYD2USB) compila, con táctil (tocar = botón BOOT); falta probarla en el hardware.
+- **Próximo paso:** grabar la placa sola desde la MacBook y verificar pantalla, táctil y WiFi; crear el agente en xiaozhi.me. Después: configurar un VPS para el servidor propio.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -51,6 +51,9 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-06 | Idioma del dispositivo: español (`--language es-ES` al compilar; no va en el config.json de la placa). |
 | 2026-11-06 | Servidor: el oficial xiaozhi.me por ahora; más adelante, uno propio (la URL ya es configurable). |
 | 2026-11-06 | Red WiFi de configuración y hostname: `Heimdall-XXXX` (`boards/common/wifi_board.cc`, afecta a todas las placas). |
+| 2026-11-09 | Táctil: solo se usa la interrupción PENIRQ del XPT2046 (GPIO36); tocar la pantalla equivale al botón BOOT. No se leen coordenadas (sin SPI ni calibración). |
+| 2026-11-09 | Sin palabra de activación en la CYD: en ESP32 clásico la wake word de xiaozhi requiere PSRAM (`USE_ESP_WAKE_WORD` depende de `SPIRAM`) y la placa no tiene. |
+| 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
 ## Servidor
 
@@ -71,24 +74,31 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 | Equipo | ESP-IDF | Puerto serie | Notas |
 |---|---|---|---|
 | Ubuntu | v6.1.0 en `~/esp/esp-idf-v6.1` (cmake/ninja vía `idf_tools.py install cmake ninja`) | — | Identidad git local: Esteban RD <eruizpy@gmail.com>. Para grabar falta el grupo `dialout`. |
-| MacBook | sin verificar | — | — |
+| MacBook | v6.1 en `~/esp/esp-idf-v6.1` (instalado 2026-11-09); `ninja`, `dfu-util`, `clang-format` vía Homebrew | — | Disco casi lleno (~18 GB libres). Tests de host: 147 OK. |
 
 ## Pendientes
 
 - [x] Elegir placa/hardware objetivo.
-- [ ] Instalar ESP-IDF v6.1 en la MacBook.
+- [x] Instalar ESP-IDF v6.1 en la MacBook.
 - [ ] Probar en hardware: pantalla (mirror/invert/RGB en `config.h`), micrófono y parlante.
 - [ ] Mejor audio: amplificador I2S MAX98357A + parlante de 4–8 Ω/3 W (en evaluación, ver bitácora).
 - [ ] Batería: LiPo 1S + módulo de carga USB-C con salida de 5 V (en evaluación, ver bitácora).
-- [ ] Táctil XPT2046 (CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36).
-- [ ] Palabra de activación (desactivada para el ESP32 clásico; hoy se usa el botón BOOT).
+- [x] Táctil XPT2046: tocar = botón BOOT (falta probar en hardware).
+- [ ] ~~Palabra de activación~~: no es posible en la CYD (requiere PSRAM); se usa el botón BOOT o el táctil.
 - [x] Idioma (es-ES) y servidor (xiaozhi.me por ahora).
 - [ ] Crear el agente Heimdall en xiaozhi.me y activar el dispositivo (cuando se pruebe la placa).
-- [ ] Revisar si `welcome.ogg` u otros sonidos dicen "Xiaozhi" y reemplazarlos.
-- [ ] Servidor propio (fase futura).
-- [ ] Instalar clang-format para formatear el código modificado.
+- [x] Sonidos es-ES revisados (transcritos con Whisper): ninguno dice "Xiaozhi"; `welcome.ogg` ("¡Hola, mi amigo!") no se usa en el código.
+- [ ] Servidor propio en un VPS (siguiente tarea).
+- [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook
+- Revisión del proyecto. Instalados ESP-IDF v6.1, ninja, dfu-util y clang-format.
+- Táctil: PENIRQ del XPT2046 como segundo botón (tocar = BOOT).
+- Audios es-ES transcritos: ninguno menciona "Xiaozhi".
+- Tests de host en la Mac: 147 OK (los 6 fallos de `test_ci_selection` son solo del Ubuntu).
+- Build `esp32-2432s028` (es-ES) en la Mac con IDF v6.1.0: OK, 1,9 MB (35 % libre).
 
 ### 2026-11-06 — Ubuntu (personalización)
 - Red WiFi de configuración/hostname cambiada a `Heimdall-XXXX`.

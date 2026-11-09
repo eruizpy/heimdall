@@ -24,8 +24,8 @@ Speaker: connector P4 (onboard amplifier, internal DAC on GPIO26).
 | Display SPI (HSPI) | SCK 14, MOSI 13, MISO 12, CS 15, DC 2 |
 | Backlight | 21 |
 | BOOT button (chat / Wi-Fi config) | 0 |
+| Touch XPT2046 PENIRQ (tap = BOOT button) | IRQ 36 (init via CLK 25, MOSI 32, CS 33) |
 | RGB LED (kept off) | R 4, G 16, B 17 |
-| Touch XPT2046 (not used yet) | CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36 |
 
 ## Build
 
@@ -34,6 +34,8 @@ python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 ```
 
 ## Notes
+
+- Touch: only the pen interrupt is used, so a tap anywhere toggles the chat like the BOOT button. Coordinates (MISO 39) are not read; LVGL touch input would need SPI and calibration.
 
 - The single-USB board (ILI9341 display) is a different variant and is not supported by this build.
 - Display orientation and colors (`DISPLAY_MIRROR_*`, `DISPLAY_INVERT_COLOR`, `DISPLAY_RGB_ORDER` in `config.h`) are pending hardware confirmation.
