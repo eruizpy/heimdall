@@ -56,7 +56,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-06 | Red WiFi de configuración y hostname: `Heimdall-XXXX` (`boards/common/wifi_board.cc`, afecta a todas las placas). |
 | 2026-11-09 | Táctil: solo se usa la interrupción PENIRQ del XPT2046 (GPIO36); tocar la pantalla equivale al botón BOOT. No se leen coordenadas (sin SPI ni calibración). |
 | 2026-11-09 | Sin palabra de activación en la CYD: en ESP32 clásico la wake word de xiaozhi requiere PSRAM (`USE_ESP_WAKE_WORD` depende de `SPIRAM`) y la placa no tiene. |
-| 2026-11-09 | Servidor propio: xiaozhi-esp32-server en modo completo con Docker, en un Linode 2 GB (`<ip-vps>`) con dominio `<dominio>` y Caddy (HTTPS automático). Archivos en `deploy/vps/`. |
+| 2026-11-09 | Servidor propio: xiaozhi-esp32-server en modo completo con Docker, en un VPS de 2 GB (`<ip-vps>`; proveedor a elección, ver `deploy/vps/README.md`) con dominio `<dominio>` y Caddy (HTTPS automático). Archivos en `deploy/vps/`. |
 | 2026-11-09 | IA: Groq (Whisper `whisper-large-v3-turbo` + LLM `openai/gpt-oss-120b`) + EdgeTTS voz `es-MX-JorgeNeural`. La cuenta de Groq no tiene Llama; gpt-oss-120b respondió en ~0,5 s. Sin modelos locales (no entran en 2 GB). |
 | 2026-11-09 | OpenAI como LLM descartado por ahora: el proveedor `openai` del servidor no puede enviar `reasoning_effort: none` (requerido para funciones en Chat Completions con los modelos GPT-6). Haría falta un parche propio. |
 | 2026-11-09 | La URL del servidor no se commitea: `scripts/build.py` la toma de `HEIMDALL_OTA_URL` (exportarla antes de compilar: `export HEIMDALL_OTA_URL=https://<dominio>/xiaozhi/ota/`). Para los scripts del VPS: `export HEIMDALL_VPS=root@<ip-vps>`. Dominio e IP reales: solo en tu gestor de contraseñas / notas privadas. |
@@ -140,7 +140,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - Firmware nuevo grabado: activación OK, conexión `wss://<dominio>/xiaozhi/v1/` OK, 4 herramientas MCP de la placa registradas. Servidor de voz ~200 MB de RAM con Groq.
 
 ### 2026-11-09 — MacBook (VPS)
-- Linode redimensionado a 2 GB; se agregaron 2 GB de swap, Docker (repo oficial) y `ufw` (22, 80, 443).
+- VPS redimensionado a 2 GB; se agregaron 2 GB de swap, Docker (repo oficial) y `ufw` (22, 80, 443).
 - Desplegado xiaozhi-esp32-server 0.9.8 (modo completo) en `/opt/heimdall`; imágenes desde `ghcr.io` (el compose oficial usa un espejo chino). MySQL 8.4 y Java con memoria limitada.
 - Caddy obtuvo los certificados de `<dominio>` y `www`. La contraseña de MySQL y el `server.secret` solo están en el VPS.
 - Memoria en uso: ~660 MB sin el servidor de voz; FunASR (ASR local por defecto) pide 2 GB: hay que cambiar a Groq.
