@@ -10,7 +10,7 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 - **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real.
 - **Cara del robot (etapa 1, hecha):** firmware `face/` en la CYD: ojos animados, textos, touch calibrado y protocolo UART (`docs/heimdall/face-protocol.md`). Probar con `python3 scripts/heimdall_face.py demo`. La CYD hoy tiene este firmware, no el Heimdall autónomo.
 - **Robot (plan):** CYD como cara táctil + ESP32-S3 como core (voz, cabeza pan-tilt, hexápodo de 18 servos). Arquitectura y compras en `docs/heimdall/compras.md`: compra A (voz y cabeza) en noviembre 2026, compra B (hexápodo) en diciembre 2026.
-- **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
+- **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && export HEIMDALL_OTA_URL=https://<dominio>/xiaozhi/ota/ && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
 ## Retomar en la MacBook
 
@@ -59,7 +59,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | Servidor propio: xiaozhi-esp32-server en modo completo con Docker, en un Linode 2 GB (`<ip-vps>`) con dominio `<dominio>` y Caddy (HTTPS automático). Archivos en `deploy/vps/`. |
 | 2026-11-09 | IA: Groq (Whisper `whisper-large-v3-turbo` + LLM `openai/gpt-oss-120b`) + EdgeTTS voz `es-MX-JorgeNeural`. La cuenta de Groq no tiene Llama; gpt-oss-120b respondió en ~0,5 s. Sin modelos locales (no entran en 2 GB). |
 | 2026-11-09 | OpenAI como LLM descartado por ahora: el proveedor `openai` del servidor no puede enviar `reasoning_effort: none` (requerido para funciones en Chat Completions con los modelos GPT-6). Haría falta un parche propio. |
-| 2026-11-09 | La placa usa `CONFIG_OTA_URL=https://<dominio>/xiaozhi/ota/` (en `config.json`); xiaozhi.me ya no se usa. |
+| 2026-11-09 | La URL del servidor no se commitea: `scripts/build.py` la toma de `HEIMDALL_OTA_URL` (exportarla antes de compilar: `export HEIMDALL_OTA_URL=https://<dominio>/xiaozhi/ota/`). Para los scripts del VPS: `export HEIMDALL_VPS=root@<ip-vps>`. Dominio e IP reales: solo en tu gestor de contraseñas / notas privadas. |
 | 2026-11-09 | Caddy usa certificados RSA-2048 (`key_type rsa2048`): la ESP32 acelera RSA por hardware pero verifica la cadena ECDSA P-384 de Let's Encrypt por software (~3 s por conexión TLS). |
 | 2026-11-09 | Robot: la CYD pasa a ser la cara (pantalla + touch con coordenadas) conectada por UART (CN1) a un core ESP32-S3 N16R8 con voz, cabeza pan-tilt (2 servos por LEDC) y hexápodo (18 MG90S por 2× PCA9685). La CYD standalone actual se conserva como variante. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
@@ -84,7 +84,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 
 | Equipo | ESP-IDF | Puerto serie | Notas |
 |---|---|---|---|
-| Ubuntu | v6.1.0 en `~/esp/esp-idf-v6.1` (cmake/ninja vía `idf_tools.py install cmake ninja`) | — | Identidad git local: Esteban RD <eruizpy@gmail.com>. Para grabar falta el grupo `dialout`. |
+| Ubuntu | v6.1.0 en `~/esp/esp-idf-v6.1` (cmake/ninja vía `idf_tools.py install cmake ninja`) | — | Identidad git: eruizpy <eruizpy@gmail.com> (ver CLAUDE.md). Para grabar falta el grupo `dialout`. |
 | MacBook | v6.1 en `~/esp/esp-idf-v6.1` (instalado 2026-11-09); `ninja`, `dfu-util`, `clang-format` vía Homebrew | `/dev/cu.usbserial-10` (CH340, driver de Apple) | Disco casi lleno (~18 GB libres). Tests de host: 147 OK. |
 
 ## Pendientes

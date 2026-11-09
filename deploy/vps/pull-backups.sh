@@ -2,10 +2,10 @@
 # Copy the Heimdall server backups from the VPS to this machine (macOS or Linux).
 # Backups contain secrets (.env, server.secret): they go to ~/heimdall-backups, never into the repo.
 #
-# Usage: deploy/vps/pull-backups.sh [user@host]
+# Usage: deploy/vps/pull-backups.sh [user@host]   (or set HEIMDALL_VPS=user@host)
 set -eu
 
-REMOTE="${1:-root@<ip-vps>}"
+REMOTE="${1:-${HEIMDALL_VPS:?pass user@host or set HEIMDALL_VPS}}"
 DEST="${HEIMDALL_BACKUP_DIR:-$HOME/heimdall-backups}"
 
 mkdir -p "$DEST"

@@ -1646,6 +1646,12 @@ def build_board(
             )
             user_options.extend(build_option_sdkconfig)
 
+        # Heimdall: the self-hosted server URL comes from the environment so it is
+        # never committed (e.g. HEIMDALL_OTA_URL=https://<domain>/xiaozhi/ota/).
+        ota_url = os.environ.get("HEIMDALL_OTA_URL", "").strip()
+        if ota_url:
+            user_options.append(f'CONFIG_OTA_URL="{ota_url}"')
+
         sdkconfig_append = _merge_sdkconfig_options(
             sdkconfig_append,
             user_options,

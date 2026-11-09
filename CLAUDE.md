@@ -17,6 +17,11 @@ Por lo tanto, en **cada sesión**:
 3. **Memoria del proyecto:** todo lo que deba recordarse entre sesiones (decisiones, configuración elegida, hardware, pendientes, problemas encontrados) va en `docs/heimdall/PROGRESS.md`, **no** en la memoria local de Claude. Actualizarlo y pushearlo antes de cerrar la sesión o cuando el usuario diga que se cambia de equipo.
 4. **Al terminar:** verificar que `git status` esté limpio y que `main` coincida con `origin/main`.
 
+## Commits y datos privados
+
+- Autor de todos los commits: `eruizpy <eruizpy@gmail.com>`. **No** agregar líneas `Co-Authored-By` ni otra atribución a Claude en commits o PR.
+- No commitear el dominio, la IP del VPS ni secretos. Usar marcadores (`<dominio>`, `<ip-vps>`) y variables de entorno locales: `HEIMDALL_OTA_URL` (la lee `scripts/build.py`) y `HEIMDALL_VPS` (scripts de `deploy/vps/`).
+
 ## Diferencias entre equipos
 
 - Los comandos y scripts deben funcionar en Linux y macOS (evitar flags exclusivos de GNU como `sed -i` sin sufijo; usar Python o comandos portables).

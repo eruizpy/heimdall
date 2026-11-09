@@ -4,9 +4,7 @@
     "builds": [
         {
             "name": "esp32-2432s028",
-            "sdkconfig_append": [
-                "CONFIG_OTA_URL=\"https://<dominio>/xiaozhi/ota/\""
-            ]
+            "sdkconfig_append": []
         }
     ]
 }
