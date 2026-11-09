@@ -4,9 +4,9 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 
 ## Estado actual
 
-- **Etapa:** la CYD2USB ya corre Heimdall: pantalla correcta, WiFi conectado y servidor alcanzado; falta activarla en xiaozhi.me.
+- **Etapa:** Heimdall funciona de punta a punta con el servidor propio: la placa está activada en `<dominio>`, conecta por `wss://` y el servidor carga Groq + EdgeTTS. Falta el micrófono para hablarle.
 - **Servidor propio:** desplegado en `<dominio>` (ver `deploy/vps/README.md`); el firmware ya apunta a `https://<dominio>/xiaozhi/ota/`.
-- **Próximo paso:** configurar la consola (parámetros, Groq, EdgeTTS, agente Heimdall), vincular la placa y probar el táctil/BOOT.
+- **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real; confirmar el táctil.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -55,7 +55,8 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | Táctil: solo se usa la interrupción PENIRQ del XPT2046 (GPIO36); tocar la pantalla equivale al botón BOOT. No se leen coordenadas (sin SPI ni calibración). |
 | 2026-11-09 | Sin palabra de activación en la CYD: en ESP32 clásico la wake word de xiaozhi requiere PSRAM (`USE_ESP_WAKE_WORD` depende de `SPIRAM`) y la placa no tiene. |
 | 2026-11-09 | Servidor propio: xiaozhi-esp32-server en modo completo con Docker, en un Linode 2 GB (`<ip-vps>`) con dominio `<dominio>` y Caddy (HTTPS automático). Archivos en `deploy/vps/`. |
-| 2026-11-09 | IA: Groq (Whisper para voz, LLM compatible con OpenAI) + EdgeTTS en español. Sin modelos locales (no entran en 2 GB). |
+| 2026-11-09 | IA: Groq (Whisper `whisper-large-v3-turbo` + LLM `openai/gpt-oss-120b`) + EdgeTTS voz `es-MX-JorgeNeural`. La cuenta de Groq no tiene Llama; gpt-oss-120b respondió en ~0,5 s. Sin modelos locales (no entran en 2 GB). |
+| 2026-11-09 | OpenAI como LLM descartado por ahora: el proveedor `openai` del servidor no puede enviar `reasoning_effort: none` (requerido para funciones en Chat Completions con los modelos GPT-6). Haría falta un parche propio. |
 | 2026-11-09 | La placa usa `CONFIG_OTA_URL=https://<dominio>/xiaozhi/ota/` (en `config.json`); xiaozhi.me ya no se usa. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
@@ -93,13 +94,21 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Táctil XPT2046: tocar = botón BOOT (falta probar en hardware).
 - [ ] ~~Palabra de activación~~: no es posible en la CYD (requiere PSRAM); se usa el botón BOOT o el táctil.
 - [x] Idioma (es-ES) y servidor (xiaozhi.me por ahora).
-- [ ] Consola de <dominio>: registrar el admin, `server.websocket`/`server.ota`, clave de Groq, EdgeTTS en español, agente Heimdall y vincular la placa.
+- [x] Consola de <dominio> configurada y placa vinculada al agente Heimdall (2026-11-09).
+- [ ] Probar una conversación completa cuando llegue el micrófono.
+- [ ] Evaluar `AUDIO_OUTPUT_SAMPLE_RATE 16000` en la placa: el servidor envía 16 kHz y hoy se remuestrea a 24 kHz.
 - [x] Sonidos es-ES revisados (transcritos con Whisper): ninguno dice "Xiaozhi"; `welcome.ogg` ("¡Hola, mi amigo!") no se usa en el código.
 - [x] Servidor propio en un VPS: desplegado (2026-11-09).
 - [ ] Respaldos automáticos de MySQL del VPS.
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (consola y activación)
+- Admin registrado (el registro público quedó cerrado). La contraseña exige mayúsculas, minúsculas, números y un carácter especial.
+- Por SQL: LLM `LLM_GroqLLM` (clave copiada de GroqASR), predeterminados Groq, 4 voces EdgeTTS en español (`ai_tts_voice`, insertar con `--default-character-set=utf8mb4`), plantilla de agente Heimdall en español, `server.fronted_url = https://<dominio>`. Tras cambios en la base: borrar en Redis `model:data:*`, `server:config` y `sys:params`.
+- Groq bloquea el User-Agent por defecto de Python urllib (403); usar uno propio en pruebas.
+- Firmware nuevo grabado: activación OK, conexión `wss://<dominio>/xiaozhi/v1/` OK, 4 herramientas MCP de la placa registradas. Servidor de voz ~200 MB de RAM con Groq.
 
 ### 2026-11-09 — MacBook (VPS)
 - Linode redimensionado a 2 GB; se agregaron 2 GB de swap, Docker (repo oficial) y `ufw` (22, 80, 443).
