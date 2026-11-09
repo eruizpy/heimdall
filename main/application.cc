@@ -1407,6 +1407,9 @@ void Application::SendTextQuery(const std::string& text) {
             ESP_LOGW(TAG, "Text query ignored: device is not idle");
             return;
         }
+        // Same as the wake word path: leave Wi-Fi power save before connecting, otherwise
+        // every server round trip waits for the next ~1 s listen interval.
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::PERFORMANCE);
         if (!protocol_->IsAudioChannelOpened()) {
             SetDeviceState(kDeviceStateConnecting);
             if (!protocol_->OpenAudioChannel()) {

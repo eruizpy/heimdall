@@ -59,6 +59,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | IA: Groq (Whisper `whisper-large-v3-turbo` + LLM `openai/gpt-oss-120b`) + EdgeTTS voz `es-MX-JorgeNeural`. La cuenta de Groq no tiene Llama; gpt-oss-120b respondió en ~0,5 s. Sin modelos locales (no entran en 2 GB). |
 | 2026-11-09 | OpenAI como LLM descartado por ahora: el proveedor `openai` del servidor no puede enviar `reasoning_effort: none` (requerido para funciones en Chat Completions con los modelos GPT-6). Haría falta un parche propio. |
 | 2026-11-09 | La placa usa `CONFIG_OTA_URL=https://<dominio>/xiaozhi/ota/` (en `config.json`); xiaozhi.me ya no se usa. |
+| 2026-11-09 | Caddy usa certificados RSA-2048 (`key_type rsa2048`): la ESP32 acelera RSA por hardware pero verifica la cadena ECDSA P-384 de Let's Encrypt por software (~3 s por conexión TLS). |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
 ## Servidor
@@ -99,7 +100,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Consola de <dominio> configurada y placa vinculada al agente Heimdall (2026-11-09).
 - [x] Consultas de texto por puerto serie (`scripts/heimdall_ask.py`): respuesta en ~2 s, control de brillo por voz OK (2026-11-09).
 - [ ] Probar una conversación completa cuando llegue el micrófono.
-- [ ] La conexión de la placa al servidor tarda ~10 s (TCP 9 s; también pasaba con api.tenclass.net): revisar DNS/IPv6/red de casa.
+- [x] Conexión lenta de la placa (~10 s): corregida, ahora ~1,8 s (2026-11-09).
 - [ ] Evaluar `AUDIO_OUTPUT_SAMPLE_RATE 16000` en la placa: el servidor envía 16 kHz y hoy se remuestrea a 24 kHz.
 - [x] Sonidos es-ES revisados (transcritos con Whisper): ninguno dice "Xiaozhi"; `welcome.ogg` ("¡Hola, mi amigo!") no se usa en el código.
 - [x] Servidor propio en un VPS: desplegado (2026-11-09).
@@ -108,6 +109,11 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (latencia de conexión)
+- Diagnóstico con tcpdump en el VPS: sin pérdida de SYN ni problema de DNS. Dos causas: (1) `SendTextQuery` conectaba con el WiFi en `MAX_MODEM` (cada ida y vuelta esperaba el intervalo de escucha de ~1 s); ahora pasa a `PERFORMANCE` antes, como la palabra de activación. (2) ~3,4 s de criptografía en la ESP32 verificando la cadena ECDSA.
+- Caddy pasó a RSA-2048; los certificados ECDSA viejos quedaron en `/opt/heimdall/caddy/old-ecdsa-certs/`.
+- Resultado: WebSocket 10,3 s → 1,8 s; OTA al arrancar 6,2 s → 2,5 s; pregunta en frío → primera frase en 3,8 s.
 
 ### 2026-11-09 — MacBook (consultas de texto)
 - Nuevo `Application::SendTextQuery()` (núcleo, genérico): abre el canal y manda el texto con `listen`/`detect`, modo manual para no transmitir el micrófono. La placa lee líneas del UART0 y las envía.

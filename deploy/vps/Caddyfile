@@ -1,3 +1,9 @@
+{
+	# RSA certificates: the ESP32 has RSA hardware acceleration but verifies the
+	# ECDSA (P-384) Let's Encrypt chain in software, which adds ~3 s per TLS handshake.
+	key_type rsa2048
+}
+
 {$DOMAIN} {
 	encode gzip
 
