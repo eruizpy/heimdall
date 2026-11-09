@@ -16,7 +16,7 @@ Asistente de voz con IA sobre ESP32 que evoluciona hacia un **robot de escritori
 | Hexápodo de 18 servos: cinemática inversa, marcha trípode, control por voz | ⏳ Compra B |
 | Migración del servidor a AWS IoT (ver [Migración a AWS](#migración-a-aws)) | 📋 Planificada |
 
-El detalle del avance, las decisiones y la bitácora están en [docs/heimdall/PROGRESS.md](docs/heimdall/PROGRESS.md).
+**Versión actual: 0.1.0** ([CHANGELOG](CHANGELOG.md)). El detalle del avance, las decisiones y la bitácora están en [docs/heimdall/PROGRESS.md](docs/heimdall/PROGRESS.md); las especificaciones de cada funcionalidad, en [docs/specs](docs/specs/README.md).
 
 ## Funcionalidades
 
@@ -255,6 +255,8 @@ Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](d
 | `scripts/build.py` | Compilación por placa y variante |
 | `scripts/heimdall_ask.py` | Enviar preguntas de texto al asistente por puerto serie |
 | `scripts/heimdall_face.py` | Simular al core frente a la cara (demo, monitor, comandos) |
+| `scripts/ci.sh` | CI local: tests, formato y compilación de los firmwares |
+| `.githooks/` | Hook de pre-push que corre el CI rápido |
 | `docs/heimdall/` | Progreso, compras y protocolo de la cara |
 | `docs/specs/` | Especificaciones (SDD): requisitos, plan y tareas por funcionalidad |
 | `tests/host/` | Tests de la lógica del firmware que corren en la computadora |
@@ -273,9 +275,12 @@ python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 # Firmware de la cara
 cd face && idf.py set-target esp32 && idf.py -p <puerto> flash
 
-# Tests: lógica del firmware en la computadora (Unity) y herramientas (unittest)
-cmake -S tests/host -B build-host && cmake --build build-host && ctest --test-dir build-host --output-on-failure
-python3 -m unittest discover -s scripts/tests
+# CI local: tests (Unity + unittest), formato y los dos firmwares; --quick omite la compilación
+scripts/ci.sh
+scripts/ci.sh --quick
+
+# Activar el hook de pre-push (una vez por clon)
+git config core.hooksPath .githooks
 ```
 
 El proyecto sigue un ciclo **SDLC con SDD y TDD**: cada funcionalidad tiene especificación, plan y tareas en [docs/specs](docs/specs/README.md) y los tests se escriben antes que el código. El CI es **local** (sin GitHub Actions): `scripts/ci.sh` corre tests, formato y compilación de los dos firmwares, y el hook de pre-push corre la versión rápida (activarlo una vez por clon con `git config core.hooksPath .githooks`). Cambios por versión en [CHANGELOG.md](CHANGELOG.md).
