@@ -5,7 +5,8 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 ## Estado actual
 
 - **Etapa:** la CYD2USB ya corre Heimdall: pantalla correcta, WiFi conectado y servidor alcanzado; falta activarla en xiaozhi.me.
-- **Próximo paso:** activar el dispositivo con el código de 6 dígitos de la pantalla y probar el táctil/BOOT. Después: configurar un VPS para el servidor propio.
+- **Servidor propio:** desplegado en `<dominio>` (ver `deploy/vps/README.md`); el firmware ya apunta a `https://<dominio>/xiaozhi/ota/`.
+- **Próximo paso:** configurar la consola (parámetros, Groq, EdgeTTS, agente Heimdall), vincular la placa y probar el táctil/BOOT.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -53,11 +54,16 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-06 | Red WiFi de configuración y hostname: `Heimdall-XXXX` (`boards/common/wifi_board.cc`, afecta a todas las placas). |
 | 2026-11-09 | Táctil: solo se usa la interrupción PENIRQ del XPT2046 (GPIO36); tocar la pantalla equivale al botón BOOT. No se leen coordenadas (sin SPI ni calibración). |
 | 2026-11-09 | Sin palabra de activación en la CYD: en ESP32 clásico la wake word de xiaozhi requiere PSRAM (`USE_ESP_WAKE_WORD` depende de `SPIRAM`) y la placa no tiene. |
+| 2026-11-09 | Servidor propio: xiaozhi-esp32-server en modo completo con Docker, en un Linode 2 GB (`<ip-vps>`) con dominio `<dominio>` y Caddy (HTTPS automático). Archivos en `deploy/vps/`. |
+| 2026-11-09 | IA: Groq (Whisper para voz, LLM compatible con OpenAI) + EdgeTTS en español. Sin modelos locales (no entran en 2 GB). |
+| 2026-11-09 | La placa usa `CONFIG_OTA_URL=https://<dominio>/xiaozhi/ota/` (en `config.json`); xiaozhi.me ya no se usa. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
 ## Servidor
 
-**Fase actual: servidor oficial xiaozhi.me** (la URL por defecto del firmware, `https://api.tenclass.net/xiaozhi/ota/`).
+**Fase actual (desde 2026-11-09): servidor propio en `https://<dominio>`**, ver `deploy/vps/README.md`. Lo de abajo sobre xiaozhi.me queda como referencia.
+
+**Fase anterior: servidor oficial xiaozhi.me** (la URL por defecto de xiaozhi, `https://api.tenclass.net/xiaozhi/ota/`).
 
 1. Crear una cuenta en https://xiaozhi.me y entrar a la consola.
 2. Crear un agente con nombre **Heimdall**, idioma español, una voz en español, y escribir su personalidad (rol/prompt).
@@ -87,12 +93,19 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Táctil XPT2046: tocar = botón BOOT (falta probar en hardware).
 - [ ] ~~Palabra de activación~~: no es posible en la CYD (requiere PSRAM); se usa el botón BOOT o el táctil.
 - [x] Idioma (es-ES) y servidor (xiaozhi.me por ahora).
-- [ ] Crear el agente Heimdall en xiaozhi.me y activar el dispositivo (cuando se pruebe la placa).
+- [ ] Consola de <dominio>: registrar el admin, `server.websocket`/`server.ota`, clave de Groq, EdgeTTS en español, agente Heimdall y vincular la placa.
 - [x] Sonidos es-ES revisados (transcritos con Whisper): ninguno dice "Xiaozhi"; `welcome.ogg` ("¡Hola, mi amigo!") no se usa en el código.
-- [ ] Servidor propio en un VPS (siguiente tarea).
+- [x] Servidor propio en un VPS: desplegado (2026-11-09).
+- [ ] Respaldos automáticos de MySQL del VPS.
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (VPS)
+- Linode redimensionado a 2 GB; se agregaron 2 GB de swap, Docker (repo oficial) y `ufw` (22, 80, 443).
+- Desplegado xiaozhi-esp32-server 0.9.8 (modo completo) en `/opt/heimdall`; imágenes desde `ghcr.io` (el compose oficial usa un espejo chino). MySQL 8.4 y Java con memoria limitada.
+- Caddy obtuvo los certificados de `<dominio>` y `www`. La contraseña de MySQL y el `server.secret` solo están en el VPS.
+- Memoria en uso: ~660 MB sin el servidor de voz; FunASR (ASR local por defecto) pide 2 GB: hay que cambiar a Groq.
 
 ### 2026-11-09 — MacBook (primera prueba en hardware)
 - Grabada la CYD2USB (ESP32-D0WD-V3). Arranque limpio, ~128 KB de RAM libre con WiFi; red `Heimdall-42F9`.

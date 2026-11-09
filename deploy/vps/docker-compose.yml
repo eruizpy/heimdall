@@ -1,0 +1,98 @@
+# Heimdall server: xiaozhi-esp32-server, full module (server + console + MySQL + Redis),
+# behind Caddy with automatic HTTPS. Based on upstream docker-compose_all.yml, tuned for a
+# 2 GB VPS. Only Caddy publishes ports (80/443); everything else stays on the internal network.
+#
+# Usage on the VPS (in /opt/heimdall): see deploy/vps/README.md
+
+services:
+  caddy:
+    image: caddy:2.10
+    container_name: heimdall-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    depends_on:
+      - xiaozhi-esp32-server
+      - xiaozhi-esp32-server-web
+
+  # Voice server: WebSocket on 8000 (/xiaozhi/v1/), vision HTTP on 8003.
+  xiaozhi-esp32-server:
+    image: ghcr.io/xinnan-tech/xiaozhi-esp32-server:server_latest
+    container_name: xiaozhi-esp32-server
+    restart: always
+    depends_on:
+      - xiaozhi-esp32-server-web
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ./data:/opt/xiaozhi-esp32-server/data
+    # No local SenseVoice model: speech recognition runs on Groq (cloud).
+
+  # Console (manager-web) + manager-api + OTA on 8002.
+  xiaozhi-esp32-server-web:
+    image: ghcr.io/xinnan-tech/xiaozhi-esp32-server:web_latest
+    container_name: xiaozhi-esp32-server-web
+    restart: always
+    depends_on:
+      xiaozhi-esp32-server-db:
+        condition: service_healthy
+      xiaozhi-esp32-server-redis:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      - JAVA_TOOL_OPTIONS=-Xms128m -Xmx384m -XX:+UseSerialGC -XX:MaxMetaspaceSize=192m
+      - SPRING_DATASOURCE_DRUID_URL=jdbc:mysql://xiaozhi-esp32-server-db:3306/xiaozhi_esp32_server?useUnicode=true&characterEncoding=UTF-8&serverTimezone=${TZ}&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
+      - SPRING_DATASOURCE_DRUID_USERNAME=root
+      - SPRING_DATASOURCE_DRUID_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=xiaozhi-esp32-server-redis
+      - SPRING_DATA_REDIS_PASSWORD=
+      - SPRING_DATA_REDIS_PORT=6379
+    volumes:
+      - ./uploadfile:/uploadfile
+
+  xiaozhi-esp32-server-db:
+    image: mysql:8.4
+    container_name: xiaozhi-esp32-server-db
+    restart: always
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --performance-schema=OFF
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
+      - --max-connections=60
+      - --key-buffer-size=8M
+      - --tmp-table-size=16M
+      - --max-heap-table-size=16M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    environment:
+      - TZ=${TZ}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=xiaozhi_esp32_server
+
+  xiaozhi-esp32-server-redis:
+    image: redis:8.0
+    container_name: xiaozhi-esp32-server-redis
+    restart: always
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
