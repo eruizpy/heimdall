@@ -67,5 +67,6 @@ Una tarea o funcionalidad está terminada cuando:
 | 005 | Cabeza móvil (pan-tilt) | Por escribir |
 | 006 | Hexápodo: cinemática y marcha | Por escribir antes de la compra B |
 | 007 | Migración a AWS IoT | Por escribir (base: README, "Migración a AWS") |
+| [008](008-release-packages/spec.md) | Paquetes de release para macOS y Linux | Verificada |
 
 Las especificaciones retroactivas documentan lo que ya existía antes de adoptar este proceso; sus tests se agregaron después, siguiendo el ciclo rojo → verde sobre módulos extraídos.
