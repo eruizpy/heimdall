@@ -256,6 +256,8 @@ Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](d
 | `scripts/heimdall_ask.py` | Enviar preguntas de texto al asistente por puerto serie |
 | `scripts/heimdall_face.py` | Simular al core frente a la cara (demo, monitor, comandos) |
 | `docs/heimdall/` | Progreso, compras y protocolo de la cara |
+| `docs/specs/` | Especificaciones (SDD): requisitos, plan y tareas por funcionalidad |
+| `tests/host/` | Tests de la lógica del firmware que corren en la computadora |
 
 ## Desarrollo
 
@@ -271,9 +273,12 @@ python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 # Firmware de la cara
 cd face && idf.py set-target esp32 && idf.py -p <puerto> flash
 
-# Pruebas del sistema de compilación
-python3 -m unittest discover -s scripts/tests -v
+# Tests: lógica del firmware en la computadora (Unity) y herramientas (unittest)
+cmake -S tests/host -B build-host && cmake --build build-host && ctest --test-dir build-host --output-on-failure
+python3 -m unittest discover -s scripts/tests
 ```
+
+El proyecto sigue un ciclo **SDLC con SDD y TDD**: cada funcionalidad tiene especificación, plan y tareas en [docs/specs](docs/specs/README.md), los tests se escriben antes que el código y el CI ([heimdall-ci.yml](.github/workflows/heimdall-ci.yml)) corre tests, formato y compilación de los firmwares en cada push. Cambios por versión en [CHANGELOG.md](CHANGELOG.md).
 
 Probar sin micrófono:
 
@@ -287,6 +292,8 @@ Puertos serie: `/dev/cu.usbserial-*` en macOS, `/dev/ttyUSB*` en Linux.
 ## Documentación
 
 - [Progreso y decisiones](docs/heimdall/PROGRESS.md)
+- [Proceso de desarrollo y especificaciones](docs/specs/README.md)
+- [Changelog](CHANGELOG.md)
 - [Compras](docs/heimdall/compras.md)
 - [Protocolo cara ↔ core](docs/heimdall/face-protocol.md)
 - [Servidor y respaldos](deploy/vps/README.md)

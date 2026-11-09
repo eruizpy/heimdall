@@ -17,6 +17,15 @@ Por lo tanto, en **cada sesión**:
 3. **Memoria del proyecto:** todo lo que deba recordarse entre sesiones (decisiones, configuración elegida, hardware, pendientes, problemas encontrados) va en `docs/heimdall/PROGRESS.md`, **no** en la memoria local de Claude. Actualizarlo y pushearlo antes de cerrar la sesión o cuando el usuario diga que se cambia de equipo.
 4. **Al terminar:** verificar que `git status` esté limpio y que `main` coincida con `origin/main`.
 
+## Proceso: SDLC con SDD y TDD
+
+El proceso completo está en `docs/specs/README.md`. Reglas obligatorias:
+
+1. **SDD:** ninguna funcionalidad nueva se implementa sin `docs/specs/NNN-nombre/spec.md` (requisitos y criterios de aceptación), `plan.md` y `tasks.md`, y sin la aprobación del usuario sobre la especificación.
+2. **TDD:** para cada tarea, primero el test que falla, después el código mínimo, después el refactor. La lógica se separa del hardware para testearla en la computadora (`tests/host/`, Unity); las herramientas se testean en `scripts/tests/`.
+3. **Definición de terminado:** criterios de aceptación cumplidos; tests nuevos y existentes en verde (`ctest --test-dir build-host`, `python3 -m unittest discover -s scripts/tests`); formato con `clang-format` 23.1.5; firmwares compilando; CI (`.github/workflows/heimdall-ci.yml`) en verde; pruebas de hardware registradas en `PROGRESS.md`; documentación y `CHANGELOG.md` al día.
+4. **Versionado:** semver con tags `vX.Y.Z` y entrada en `CHANGELOG.md` al cerrar cada etapa.
+
 ## Commits y datos privados
 
 - Autor de todos los commits: `eruizpy <eruizpy@gmail.com>`. **No** agregar líneas `Co-Authored-By` ni otra atribución a Claude en commits o PR.

@@ -110,9 +110,17 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Respaldos automáticos del VPS: diarios a las 03:30, 14 días, restauración probada (2026-11-09).
 - [x] Copia de los respaldos fuera del VPS: `deploy/vps/pull-backups.sh` → `~/heimdall-backups/` (correr cada tanto; primera copia en la MacBook el 2026-11-09).
 - [x] Instalar clang-format (MacBook, Homebrew).
+- [ ] Revisar la facturación de GitHub Actions (las corridas no arrancan por pagos/límite de gasto).
 - [ ] Migración a AWS IoT: 8 fases (preparación, identidad, estado, OTA, voz, consola, seguridad, corte), detalladas en el README.
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (proceso SDD/TDD, v0.1.0)
+- Proceso documentado en `docs/specs/README.md`; especificaciones retroactivas 001 (consultas de texto), 002 (cara) y 003 (servidor y configuración privada).
+- TDD: tests de host con Unity en `tests/host/` (protocolo de la cara, expresiones, calibración, saneamiento de texto) y `scripts/tests/test_heimdall.py`. La lógica pasó a módulos puros (`face_proto`, `face_expr`, `touch_calib`, `text_query.h`).
+- El test de expresiones encontró un bug real: `{"t":"emo","v":""}` dejaba la cara en un bucle infinito. Corregido y verificado en la placa (HIL).
+- CI `heimdall-ci.yml`: tests, formato (clang-format 23.1.5) y compilación de los dos firmwares. El workflow de la matriz completa quedó manual. Ojo: las corridas de Actions venían fallando por facturación de la cuenta (límite de gasto/pagos), no por el código.
+- Versión `v0.1.0` con `CHANGELOG.md`.
 
 ### 2026-11-09 — MacBook (cara del robot)
 - Nuevo proyecto ESP-IDF `face/` para la CYD: ST7789 + LVGL 9.5, ojos dibujados a mano (sin transformaciones: no hay PSRAM), 10 expresiones con nombres de xiaozhi, parpadeo y miradas automáticas, ojos que siguen el dedo.
