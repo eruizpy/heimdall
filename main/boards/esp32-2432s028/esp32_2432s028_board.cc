@@ -7,11 +7,16 @@
 #include "wifi_board.h"
 
 #include <driver/spi_common.h>
+#include <driver/uart.h>
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
 #include <esp_lcd_panel_vendor.h>
 #include <esp_log.h>
 #include <esp_rom_sys.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+#include <string>
 
 #define TAG "Esp32_2432S028"
 
@@ -114,6 +119,39 @@ private:
         touch_button_ = new Button(handle);
     }
 
+    // Each line typed on the USB serial console is sent to the server as a text query,
+    // so the assistant can be tested without a microphone (scripts/heimdall_ask.py).
+    void InitializeSerialTextQuery() {
+        ESP_ERROR_CHECK(uart_driver_install(UART_NUM_0, 512, 0, 0, nullptr, 0));
+        xTaskCreate(
+            [](void*) {
+                constexpr size_t kMaxLine = 200;
+                std::string line;
+                uint8_t buf[64];
+                while (true) {
+                    // Block for the first byte, then take whatever else is already buffered
+                    // (a single read with portMAX_DELAY would wait for a full buffer).
+                    int n = uart_read_bytes(UART_NUM_0, buf, 1, portMAX_DELAY);
+                    if (n > 0) {
+                        int more = uart_read_bytes(UART_NUM_0, buf + n, sizeof(buf) - n, 0);
+                        n += more > 0 ? more : 0;
+                    }
+                    for (int i = 0; i < n; i++) {
+                        char c = static_cast<char>(buf[i]);
+                        if (c == '\n' || c == '\r') {
+                            if (!line.empty()) {
+                                Application::GetInstance().SendTextQuery(line);
+                                line.clear();
+                            }
+                        } else if (line.size() < kMaxLine) {
+                            line += c;
+                        }
+                    }
+                }
+            },
+            "serial_query", 3072, nullptr, 1, nullptr);
+    }
+
     void OnButtonClick() {
         auto& app = Application::GetInstance();
         if (app.GetDeviceState() == kDeviceStateStarting) {
@@ -135,6 +173,7 @@ public:
         InitializeLcdDisplay();
         InitializeTouch();
         InitializeButtons();
+        InitializeSerialTextQuery();
         GetBacklight()->RestoreBrightness();
     }
 

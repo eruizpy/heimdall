@@ -1390,6 +1390,38 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
     }
 }
 
+void Application::SendTextQuery(const std::string& text) {
+    // Protocol::SendWakeWordDetected() builds JSON by concatenation: keep only safe characters.
+    std::string query;
+    for (unsigned char c : text) {
+        if (c >= 0x20 && c != '"' && c != '\\') {
+            query += static_cast<char>(c);
+        }
+    }
+    if (query.empty()) {
+        return;
+    }
+
+    Schedule([this, query]() {
+        if (!protocol_ || GetDeviceState() != kDeviceStateIdle) {
+            ESP_LOGW(TAG, "Text query ignored: device is not idle");
+            return;
+        }
+        if (!protocol_->IsAudioChannelOpened()) {
+            SetDeviceState(kDeviceStateConnecting);
+            if (!protocol_->OpenAudioChannel()) {
+                SetDeviceState(kDeviceStateIdle);
+                return;
+            }
+            SetDeviceState(kDeviceStateIdle);
+        }
+        // The reply moves idle -> speaking; manual stop returns to idle afterwards.
+        listening_mode_ = kListeningModeManualStop;
+        ESP_LOGI(TAG, "Text query: %s", query.c_str());
+        protocol_->SendWakeWordDetected(query);
+    });
+}
+
 bool Application::CanEnterSleepMode() {
     if (GetDeviceState() != kDeviceStateIdle) {
         return false;

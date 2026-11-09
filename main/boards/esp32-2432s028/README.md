@@ -33,6 +33,14 @@ Speaker: connector P4 (onboard amplifier, internal DAC on GPIO26).
 python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
 ```
 
+## Text queries over serial (no microphone needed)
+
+Each line received on the USB serial console is sent to the server as if it had been spoken (`Application::SendTextQuery`). The reply is shown on screen and played on the speaker.
+
+```sh
+python3 scripts/heimdall_ask.py "¿Qué hora es?"   # needs pyserial (ESP-IDF environment)
+```
+
 ## Notes
 
 - Touch: only the pen interrupt is used, so a tap anywhere toggles the chat like the BOOT button. Coordinates (MISO 39) are not read; LVGL touch input would need SPI and calibration.

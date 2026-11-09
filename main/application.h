@@ -110,6 +110,13 @@ public:
 
     void Reboot();
     void WakeWordInvoke(const std::string& wake_word);
+
+    /**
+     * Send a typed text query as if the user had said it (thread-safe).
+     * Only acts in idle state. Uses manual-stop listening so the device returns
+     * to idle after the reply instead of streaming microphone audio.
+     */
+    void SendTextQuery(const std::string& text);
     bool UpgradeFirmware(const std::string& url, const std::string& version = "");
     bool CanEnterSleepMode();
     void SendMcpMessage(const std::string& payload);
