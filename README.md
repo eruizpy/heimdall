@@ -160,6 +160,8 @@ flowchart LR
 
 Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](deploy/vps/README.md)). La migración lleva esa operación a la arquitectura de referencia de arriba, por fases y sin cortar el servicio: cada fase se valida con un dispositivo de prueba antes de mover el resto.
 
+**Región: `us-east-1` (N. Virginia).** Tiene disponibles todos los servicios del diseño (AWS IoT, Bedrock, Transcribe y Polly con español), así que se prioriza la cobertura sobre la menor latencia de `sa-east-1`.
+
 ### Productos de AWS involucrados
 
 | Área | Producto | Uso en Heimdall |
@@ -183,7 +185,7 @@ Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](d
 
 | Fase | Trabajo | Entregable / criterio de aceptación |
 |---|---|---|
-| **0. Preparación** | Cuenta y accesos (IAM Identity Center), elección de región, repositorio de infraestructura con CDK, alertas de presupuesto | `cdk deploy` crea un entorno vacío; alertas activas. Verificar en la región elegida la disponibilidad de Bedrock, Transcribe y Polly en español (por latencia desde Paraguay, comparar `sa-east-1` con `us-east-1`) |
+| **0. Preparación** | Cuenta y accesos (IAM Identity Center), repositorio de infraestructura con CDK, alertas de presupuesto; todo en la región **`us-east-1`** | `cdk deploy` crea un entorno vacío en `us-east-1`; alertas activas |
 | **1. Identidad y conexión** | Tipo de cosa y políticas de AWS IoT; Fleet Provisioning; en el firmware, **esp-aws-iot** con certificado guardado en la partición `esp_secure_cert` y, en la ESP32-S3, **Secure Boot v2 + cifrado de flash** | El dispositivo se aprovisiona solo y conecta a AWS IoT Core por MQTT con TLS mutuo |
 | **2. Estado y control** | Shadow con volumen, brillo, modo y agente; Rules Engine hacia DynamoDB y CloudWatch; Fleet Indexing | Cambiar el volumen desde la consola se refleja en el dispositivo y queda en el estado reportado |
 | **3. OTA** | Perfil de firma con AWS Signer, firmware en S3, AWS IoT Jobs con despliegue gradual y aborto automático; validación y *rollback* en el firmware | Un firmware firmado llega a un grupo de prueba; uno sin firma o defectuoso se rechaza o vuelve atrás |

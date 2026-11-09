@@ -62,6 +62,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | La URL del servidor no se commitea: `scripts/build.py` la toma de `HEIMDALL_OTA_URL` (exportarla antes de compilar: `export HEIMDALL_OTA_URL=https://<dominio>/xiaozhi/ota/`). Para los scripts del VPS: `export HEIMDALL_VPS=root@<ip-vps>`. Dominio e IP reales: solo en tu gestor de contraseñas / notas privadas. |
 | 2026-11-09 | Caddy usa certificados RSA-2048 (`key_type rsa2048`): la ESP32 acelera RSA por hardware pero verifica la cadena ECDSA P-384 de Let's Encrypt por software (~3 s por conexión TLS). |
 | 2026-11-09 | Robot: la CYD pasa a ser la cara (pantalla + touch con coordenadas) conectada por UART (CN1) a un core ESP32-S3 N16R8 con voz, cabeza pan-tilt (2 servos por LEDC) y hexápodo (18 MG90S por 2× PCA9685). La CYD standalone actual se conserva como variante. |
+| 2026-11-09 | Migración a AWS: región `us-east-1`, por disponibilidad de todos los servicios (AWS IoT, Bedrock, Transcribe, Polly) en lugar de `sa-east-1`. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
 ## Servidor
