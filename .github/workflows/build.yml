@@ -1,15 +1,10 @@
 name: Build Boards
 
 on:
+  # Heimdall: manual only. Every push is covered by heimdall-ci.yml (the boards Heimdall
+  # builds), which saves Actions minutes in the private repository.
   # Manual runs exercise the full matrix, including CI-specific options.
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - ci/* # for ci test
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read

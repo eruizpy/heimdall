@@ -1,0 +1,70 @@
+# Heimdall CI: unit tests, format and firmware builds on every change (docs/specs/README.md).
+name: Heimdall CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
+  pull_request:
+    paths-ignore: ["**.md", "docs/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: heimdall-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Heimdall-owned C/C++ sources checked with the same clang-format as the dev machines.
+  FORMAT_FILES: >-
+    face/main/*.c face/main/*.h main/text_query.h tests/host/*.c tests/host/*.cc
+    main/boards/esp32-2432s028/*.cc main/boards/esp32-2432s028/*.h
+  CLANG_FORMAT_VERSION: "23.1.5"
+
+jobs:
+  unit:
+    name: Unit tests and format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Firmware logic tests (host)
+        run: |
+          cmake -S tests/host -B build-host
+          cmake --build build-host -j
+          ctest --test-dir build-host --output-on-failure
+
+      - name: Heimdall tooling tests
+        run: python3 -m unittest scripts/tests/test_heimdall.py -v
+
+      - name: Format
+        run: pipx run --spec "clang-format==${CLANG_FORMAT_VERSION}" clang-format --dry-run -Werror $FORMAT_FILES
+
+  firmware:
+    name: Firmware builds
+    needs: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: espressif/idf:release-v6.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build tooling tests
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python -m unittest discover -s scripts/tests
+
+      - name: Assistant firmware (ESP32-2432S028)
+        run: python scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES
+
+      - name: Face firmware (face/)
+        working-directory: face
+        run: |
+          idf.py set-target esp32
+          idf.py build

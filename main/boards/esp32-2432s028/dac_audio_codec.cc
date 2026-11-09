@@ -7,8 +7,9 @@
 
 #define TAG "DacAudioCodec"
 
-DacAudioCodec::DacAudioCodec(int input_sample_rate, int output_sample_rate, dac_channel_mask_t dac_channel,
-                             gpio_num_t mic_sck, gpio_num_t mic_ws, gpio_num_t mic_din) {
+DacAudioCodec::DacAudioCodec(int input_sample_rate, int output_sample_rate,
+                             dac_channel_mask_t dac_channel, gpio_num_t mic_sck, gpio_num_t mic_ws,
+                             gpio_num_t mic_din) {
     duplex_ = false;
     input_sample_rate_ = input_sample_rate;
     output_sample_rate_ = output_sample_rate;
@@ -36,40 +37,42 @@ DacAudioCodec::DacAudioCodec(int input_sample_rate, int output_sample_rate, dac_
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, nullptr, &rx_handle_));
 
     i2s_std_config_t std_cfg = {
-        .clk_cfg = {
-            .sample_rate_hz = (uint32_t)input_sample_rate_,
-            .clk_src = I2S_CLK_SRC_DEFAULT,
+        .clk_cfg =
+            {
+                .sample_rate_hz = (uint32_t)input_sample_rate_,
+                .clk_src = I2S_CLK_SRC_DEFAULT,
 #if SOC_I2S_HW_VERSION_2
-            .ext_clk_freq_hz = 0,
+                .ext_clk_freq_hz = 0,
 #endif
-            .mclk_multiple = I2S_MCLK_MULTIPLE_256,
-        },
-        .slot_cfg = {
-            .data_bit_width = I2S_DATA_BIT_WIDTH_32BIT,
-            .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO,
-            .slot_mode = I2S_SLOT_MODE_MONO,
-            .slot_mask = I2S_STD_SLOT_LEFT,
-            .ws_width = I2S_DATA_BIT_WIDTH_32BIT,
-            .ws_pol = false,
-            .bit_shift = true,
-#if SOC_I2S_HW_VERSION_2
-            .left_align = true,
-            .big_endian = false,
-            .bit_order_lsb = false
-#endif
-        },
-        .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
-            .bclk = mic_sck,
-            .ws = mic_ws,
-            .dout = I2S_GPIO_UNUSED,
-            .din = mic_din,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv = false,
+                .mclk_multiple = I2S_MCLK_MULTIPLE_256,
             },
+        .slot_cfg = {.data_bit_width = I2S_DATA_BIT_WIDTH_32BIT,
+                     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO,
+                     .slot_mode = I2S_SLOT_MODE_MONO,
+                     .slot_mask = I2S_STD_SLOT_LEFT,
+                     .ws_width = I2S_DATA_BIT_WIDTH_32BIT,
+                     .ws_pol = false,
+                     .bit_shift = true,
+#if SOC_I2S_HW_VERSION_2
+                     .left_align = true,
+                     .big_endian = false,
+                     .bit_order_lsb = false
+#endif
         },
+        .gpio_cfg =
+            {
+                .mclk = I2S_GPIO_UNUSED,
+                .bclk = mic_sck,
+                .ws = mic_ws,
+                .dout = I2S_GPIO_UNUSED,
+                .din = mic_din,
+                .invert_flags =
+                    {
+                        .mclk_inv = false,
+                        .bclk_inv = false,
+                        .ws_inv = false,
+                    },
+            },
     };
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle_, &std_cfg));
     ESP_LOGI(TAG, "DAC output and I2S microphone created");
@@ -108,7 +111,8 @@ int DacAudioCodec::Write(const int16_t* data, int samples) {
     }
 
     size_t bytes_loaded = 0;
-    esp_err_t err = dac_continuous_write(dac_handle_, dac_buffer_.data(), samples, &bytes_loaded, -1);
+    esp_err_t err =
+        dac_continuous_write(dac_handle_, dac_buffer_.data(), samples, &bytes_loaded, -1);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "DAC write failed: %s", esp_err_to_name(err));
     }
@@ -122,8 +126,8 @@ int DacAudioCodec::Read(int16_t* dest, int samples) {
     }
 
     size_t bytes_read = 0;
-    if (i2s_channel_read(rx_handle_, mic_buffer_.data(), samples * sizeof(int32_t), &bytes_read, kReadTimeoutMs) !=
-        ESP_OK) {
+    if (i2s_channel_read(rx_handle_, mic_buffer_.data(), samples * sizeof(int32_t), &bytes_read,
+                         kReadTimeoutMs) != ESP_OK) {
         return 0;
     }
 
