@@ -109,6 +109,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Respaldos automáticos del VPS: diarios a las 03:30, 14 días, restauración probada (2026-11-09).
 - [x] Copia de los respaldos fuera del VPS: `deploy/vps/pull-backups.sh` → `~/heimdall-backups/` (correr cada tanto; primera copia en la MacBook el 2026-11-09).
 - [x] Instalar clang-format (MacBook, Homebrew).
+- [ ] Migración a AWS IoT: 8 fases (preparación, identidad, estado, OTA, voz, consola, seguridad, corte), detalladas en el README.
 
 ## Bitácora
 

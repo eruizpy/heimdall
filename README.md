@@ -14,6 +14,7 @@ Asistente de voz con IA sobre ESP32 que evoluciona hacia un **robot de escritori
 | Core ESP32-S3: micrófono, parlante, palabra de activación, cara remota | ⏳ Compra A |
 | Cabeza móvil (pan-tilt de 2 servos) | ⏳ Compra A |
 | Hexápodo de 18 servos: cinemática inversa, marcha trípode, control por voz | ⏳ Compra B |
+| Migración del servidor a AWS IoT (ver [Migración a AWS](#migración-a-aws)) | 📋 Planificada |
 
 El detalle del avance, las decisiones y la bitácora están en [docs/heimdall/PROGRESS.md](docs/heimdall/PROGRESS.md).
 
@@ -154,6 +155,49 @@ flowchart LR
 | **Lambda (MCP de la nube)** | Herramientas externas: clima, domótica, búsquedas. |
 | **Consola (CloudFront + Cognito + API Gateway)** | Alta de dispositivos, agentes y personalidad; usuarios autenticados. |
 | **DynamoDB / S3 / CloudWatch** | Datos de dispositivos y agentes, firmware y respaldos, observabilidad. |
+
+## Migración a AWS
+
+Hoy el servidor corre en contenedores sobre una máquina virtual ([deploy/vps](deploy/vps/README.md)). La migración lleva esa operación a la arquitectura de referencia de arriba, por fases y sin cortar el servicio: cada fase se valida con un dispositivo de prueba antes de mover el resto.
+
+### Productos de AWS involucrados
+
+| Área | Producto | Uso en Heimdall |
+|---|---|---|
+| Conectividad | **AWS IoT Core** (broker MQTT, MQTT 5) | Canal de control y telemetría con TLS mutuo |
+| Identidad | **Certificados X.509 + políticas de AWS IoT** | Un certificado por dispositivo, permisos mínimos por tópico |
+| Alta de dispositivos | **AWS IoT Fleet Provisioning** (por certificado de reclamo) | El dispositivo obtiene su certificado definitivo en el primer arranque |
+| Estado | **AWS IoT Device Shadow** | Configuración deseada y reportada: volumen, brillo, modo, agente |
+| Actualizaciones | **AWS IoT Jobs + AWS IoT OTA** con **AWS Signer** | Firmware firmado en S3, despliegue gradual con criterios de aborto |
+| Reglas | **AWS IoT Rules Engine** | Telemetría hacia DynamoDB, CloudWatch y Lambda |
+| Flota | **AWS IoT Device Management** (Fleet Indexing, Secure Tunneling) | Búsqueda de dispositivos por estado y acceso remoto para soporte |
+| Seguridad | **AWS IoT Device Defender** | Auditoría de políticas y certificados, detección de comportamiento anómalo |
+| Credenciales | **AWS IoT Credentials Provider** | Credenciales temporales para que el dispositivo acceda a S3 sin claves fijas |
+| Firmware | **esp-aws-iot** (coreMQTT, Shadow, Jobs y OTA para ESP-IDF) | Bibliotecas oficiales integradas en el firmware |
+| Voz | **Amazon Transcribe** (streaming), **Amazon Bedrock**, **Amazon Polly** | ASR, LLM con herramientas MCP y voz neural en español |
+| Cómputo | **Amazon ECS en Fargate** + **Application Load Balancer** | Servicio de voz por WebSocket con TLS |
+| Plataforma | **Route 53, ACM, Cognito, CloudFront, API Gateway, Lambda, DynamoDB, S3, Secrets Manager, CloudWatch** | DNS y certificados, consola y su API, datos, secretos y observabilidad |
+| Infraestructura | **AWS CDK** + **AWS Budgets** | Infraestructura como código y alertas de costo |
+
+### Fases de trabajo
+
+| Fase | Trabajo | Entregable / criterio de aceptación |
+|---|---|---|
+| **0. Preparación** | Cuenta y accesos (IAM Identity Center), elección de región, repositorio de infraestructura con CDK, alertas de presupuesto | `cdk deploy` crea un entorno vacío; alertas activas. Verificar en la región elegida la disponibilidad de Bedrock, Transcribe y Polly en español (por latencia desde Paraguay, comparar `sa-east-1` con `us-east-1`) |
+| **1. Identidad y conexión** | Tipo de cosa y políticas de AWS IoT; Fleet Provisioning; en el firmware, **esp-aws-iot** con certificado guardado en la partición `esp_secure_cert` y, en la ESP32-S3, **Secure Boot v2 + cifrado de flash** | El dispositivo se aprovisiona solo y conecta a AWS IoT Core por MQTT con TLS mutuo |
+| **2. Estado y control** | Shadow con volumen, brillo, modo y agente; Rules Engine hacia DynamoDB y CloudWatch; Fleet Indexing | Cambiar el volumen desde la consola se refleja en el dispositivo y queda en el estado reportado |
+| **3. OTA** | Perfil de firma con AWS Signer, firmware en S3, AWS IoT Jobs con despliegue gradual y aborto automático; validación y *rollback* en el firmware | Un firmware firmado llega a un grupo de prueba; uno sin firma o defectuoso se rechaza o vuelve atrás |
+| **4. Voz** | Servicio de voz en ECS Fargate detrás de un ALB con WebSocket; autenticación del dispositivo con token emitido vía AWS IoT; Transcribe (streaming), Bedrock con herramientas MCP y Polly; claves externas, si se mantiene un proveedor, en Secrets Manager | Conversación completa en español con primera respuesta en ≤ 3 s y control del dispositivo por voz |
+| **5. Consola y datos** | Consola web en CloudFront + S3 con Cognito; API Gateway + Lambda; tablas de DynamoDB; script que migra dispositivos, agentes y configuración desde la base actual | La consola nueva administra dispositivos y agentes; los datos migrados coinciden con los originales |
+| **6. Seguridad y operación** | Device Defender (auditoría y detección), alarmas y paneles de CloudWatch, recuperación a un punto en el tiempo de DynamoDB, revisión de costos | Alarmas probadas, auditoría sin hallazgos críticos, costo mensual dentro del presupuesto |
+| **7. Corte** | Ambos entornos en paralelo; un OTA final apunta los dispositivos a AWS; monitoreo; se apaga la máquina virtual con un respaldo final | Todos los dispositivos operan en AWS durante una semana sin incidentes |
+
+### Cambios en el firmware
+
+- **Transporte:** el firmware ya soporta MQTT + UDP. El canal de control pasa a AWS IoT Core (coreMQTT) con tópicos por dispositivo; el audio sigue por WebSocket hacia el servicio de voz.
+- **Arranque:** hoy la URL de OTA entrega la configuración. En AWS, la configuración llega por el Shadow y las actualizaciones por Jobs.
+- **Seguridad:** certificado único por dispositivo, nunca compilado dentro del firmware; en la ESP32-S3, Secure Boot v2, cifrado de flash y el periférico de firma digital para proteger la clave privada.
+- **Compatibilidad:** las herramientas MCP del dispositivo (volumen, cabeza, movimiento) no cambian; solo cambia quién las invoca.
 
 ## Componentes
 
