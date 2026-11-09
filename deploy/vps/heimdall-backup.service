@@ -1,0 +1,8 @@
+[Unit]
+Description=Heimdall server backup (MySQL + config)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/heimdall/backup.sh

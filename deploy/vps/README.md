@@ -49,4 +49,29 @@ docker compose pull && docker compose up -d      # actualizar
 docker stats --no-stream                          # memoria
 ```
 
-Respaldo de la base: `docker exec -e MYSQL_PWD=... xiaozhi-esp32-server-db mysqldump -uroot xiaozhi_esp32_server > backup.sql`.
+## Respaldos
+
+`backup.sh` (en el VPS: `/opt/heimdall/backup.sh`) guarda cada día a las 03:30 (hora de Asunción) un `.tar.gz` en `/opt/heimdall/backups/` con el dump de MySQL, `.env`, `config.yaml` (con el `server.secret`), `docker-compose.yml` y `Caddyfile`. Conserva 14 días. Lo dispara `heimdall-backup.timer` (systemd).
+
+```sh
+# Instalar (desde el repo)
+scp deploy/vps/backup.sh root@IP:/opt/heimdall/ && scp deploy/vps/heimdall-backup.{service,timer} root@IP:/etc/systemd/system/
+ssh root@IP 'chmod 700 /opt/heimdall/backup.sh && systemctl daemon-reload && systemctl enable --now heimdall-backup.timer'
+
+# Respaldo manual y estado
+systemctl start heimdall-backup.service && journalctl -u heimdall-backup.service -n 5
+systemctl list-timers heimdall-backup.timer
+
+# Copiar el último respaldo a este equipo (fuera del VPS)
+scp "root@IP:$(ssh root@IP 'ls -t /opt/heimdall/backups/*.tar.gz | head -1')" ~/heimdall-backups/
+```
+
+Restaurar (pisa la base actual):
+
+```sh
+cd /opt/heimdall && . ./.env && mkdir -p /tmp/r && tar -xzf backups/heimdall-FECHA.tar.gz -C /tmp/r
+docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" xiaozhi-esp32-server-db mysql -uroot --default-character-set=utf8mb4 xiaozhi_esp32_server < /tmp/r/xiaozhi_esp32_server.sql
+docker exec xiaozhi-esp32-server-redis redis-cli flushall && docker compose restart xiaozhi-esp32-server-web xiaozhi-esp32-server
+```
+
+Los respaldos viven en el mismo VPS: protegen contra errores y bases dañadas, no contra perder el VPS. Para eso, copiarlos fuera (comando de arriba) o activar Linode Backups.
