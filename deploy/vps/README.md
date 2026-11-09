@@ -62,9 +62,9 @@ ssh root@IP 'chmod 700 /opt/heimdall/backup.sh && systemctl daemon-reload && sys
 systemctl start heimdall-backup.service && journalctl -u heimdall-backup.service -n 5
 systemctl list-timers heimdall-backup.timer
 
-# Copiar el último respaldo a este equipo (fuera del VPS)
-scp "root@IP:$(ssh root@IP 'ls -t /opt/heimdall/backups/*.tar.gz | head -1')" ~/heimdall-backups/
 ```
+
+Copia fuera del VPS: desde la MacBook o el Ubuntu, `deploy/vps/pull-backups.sh` trae los respaldos nuevos a `~/heimdall-backups/` (fuera del repo: tienen secretos; nunca borra copias locales). Correrlo de vez en cuando, por ejemplo una vez por semana.
 
 Restaurar (pisa la base actual):
 
@@ -74,4 +74,4 @@ docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" xiaozhi-esp32-server-db mysql
 docker exec xiaozhi-esp32-server-redis redis-cli flushall && docker compose restart xiaozhi-esp32-server-web xiaozhi-esp32-server
 ```
 
-Los respaldos viven en el mismo VPS: protegen contra errores y bases dañadas, no contra perder el VPS. Para eso, copiarlos fuera (comando de arriba) o activar Linode Backups.
+Los respaldos viven en el mismo VPS: protegen contra errores y bases dañadas, no contra perder el VPS. Para eso está `pull-backups.sh` (o activar Linode Backups).

@@ -101,7 +101,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Sonidos es-ES revisados (transcritos con Whisper): ninguno dice "Xiaozhi"; `welcome.ogg` ("¡Hola, mi amigo!") no se usa en el código.
 - [x] Servidor propio en un VPS: desplegado (2026-11-09).
 - [x] Respaldos automáticos del VPS: diarios a las 03:30, 14 días, restauración probada (2026-11-09).
-- [ ] Copia de los respaldos fuera del VPS (scp a un equipo o Linode Backups).
+- [x] Copia de los respaldos fuera del VPS: `deploy/vps/pull-backups.sh` → `~/heimdall-backups/` (correr cada tanto; primera copia en la MacBook el 2026-11-09).
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
@@ -109,6 +109,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 ### 2026-11-09 — MacBook (respaldos)
 - `deploy/vps/backup.sh` + `heimdall-backup.timer`: dump de MySQL y configuración/secretos en `/opt/heimdall/backups/`. Restauración probada en una base temporal: tablas y acentos coinciden.
 - Zona horaria del VPS cambiada a America/Asuncion.
+- `deploy/vps/pull-backups.sh` copia los respaldos a `~/heimdall-backups/` del equipo local (rsync, sin borrar copias viejas).
 
 ### 2026-11-09 — MacBook (consola y activación)
 - Admin registrado (el registro público quedó cerrado). La contraseña exige mayúsculas, minúsculas, números y un carácter especial.
