@@ -116,7 +116,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - Nuevo proyecto ESP-IDF `face/` para la CYD: ST7789 + LVGL 9.5, ojos dibujados a mano (sin transformaciones: no hay PSRAM), 10 expresiones con nombres de xiaozhi, parpadeo y miradas automáticas, ojos que siguen el dedo.
 - Touch XPT2046 en SPI3 con calibración de 3 puntos guardada en NVS; eventos tap, long y swipe.
 - Enlace UART: USB (desarrollo) y CN1 GPIO27 TX / GPIO22 RX (core), JSON por línea a 115200.
-- `scripts/heimdall_face.py` simula al core (monitor, send, demo). Probado en la placa: hello, ping, expresiones y tap.
+- `scripts/heimdall_face.py` simula al core (monitor, send, demo). Probado en la placa: hello, ping, expresiones y todos los eventos (tap, long, swipe en las 4 direcciones). La calibración detectó ejes cruzados (raw Y ↔ pantalla X) y los corrige.
 
 ### 2026-11-09 — MacBook (latencia de conexión)
 - Diagnóstico con tcpdump en el VPS: sin pérdida de SYN ni problema de DNS. Dos causas: (1) `SendTextQuery` conectaba con el WiFi en `MAX_MODEM` (cada ida y vuelta esperaba el intervalo de escucha de ~1 s); ahora pasa a `PERFORMANCE` antes, como la palabra de activación. (2) ~3,4 s de criptografía en la ESP32 verificando la cadena ECDSA.
