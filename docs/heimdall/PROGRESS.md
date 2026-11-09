@@ -6,7 +6,7 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 
 - **Etapa:** Heimdall funciona de punta a punta con el servidor propio: la placa está activada en `<dominio>`, conecta por `wss://` y el servidor carga Groq + EdgeTTS. Falta el micrófono para hablarle.
 - **Servidor propio:** desplegado en `<dominio>` (ver `deploy/vps/README.md`); el firmware ya apunta a `https://<dominio>/xiaozhi/ota/`.
-- **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real; confirmar el táctil.
+- **Próximo paso:** comprar e instalar el INMP441 y probar una conversación real. Respaldos de MySQL en el VPS.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -88,10 +88,11 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Elegir placa/hardware objetivo.
 - [x] Instalar ESP-IDF v6.1 en la MacBook.
 - [x] Probar en hardware: pantalla, WiFi y conexión al servidor (2026-11-09).
-- [ ] Probar en hardware: táctil y BOOT (después de activar), micrófono y parlante.
+- [x] Probar en hardware: táctil y BOOT (2026-11-09).
+- [ ] Probar en hardware: micrófono y parlante.
 - [ ] Mejor audio: amplificador I2S MAX98357A + parlante de 4–8 Ω/3 W (en evaluación, ver bitácora).
 - [ ] Batería: LiPo 1S + módulo de carga USB-C con salida de 5 V (en evaluación, ver bitácora).
-- [x] Táctil XPT2046: tocar = botón BOOT (falta probar en hardware).
+- [x] Táctil XPT2046: tocar = botón BOOT (confirmado en hardware el 2026-11-09).
 - [ ] ~~Palabra de activación~~: no es posible en la CYD (requiere PSRAM); se usa el botón BOOT o el táctil.
 - [x] Idioma (es-ES) y servidor (xiaozhi.me por ahora).
 - [x] Consola de <dominio> configurada y placa vinculada al agente Heimdall (2026-11-09).
