@@ -4,8 +4,8 @@ Memoria compartida entre equipos (Ubuntu / MacBook). Actualizar al final de cada
 
 ## Estado actual
 
-- **Etapa:** la placa `esp32-2432s028` (CYD2USB) compila, con táctil (tocar = botón BOOT); falta probarla en el hardware.
-- **Próximo paso:** grabar la placa sola desde la MacBook y verificar pantalla, táctil y WiFi; crear el agente en xiaozhi.me. Después: configurar un VPS para el servidor propio.
+- **Etapa:** la CYD2USB ya corre Heimdall: pantalla correcta, WiFi conectado y servidor alcanzado; falta activarla en xiaozhi.me.
+- **Próximo paso:** activar el dispositivo con el código de 6 dígitos de la pantalla y probar el táctil/BOOT. Después: configurar un VPS para el servidor propio.
 - **Por comprar (Amazon):** micrófono INMP441, amplificador MAX98357A + parlante de 4–8 Ω/3 W, batería LiPo 1S 1000–2000 mAh + módulo de carga USB-C con salida de 5 V (IP5306 o TP4056+MT3608).
 - **Compilar:** `. ~/esp/esp-idf-v6.1/export.sh && python3 scripts/build.py esp32-2432s028 --name esp32-2432s028 --language es-ES`
 
@@ -30,7 +30,7 @@ idf.py -p /dev/cu.usbserial-XXXX flash monitor   # salir con Ctrl+]
 ```
 
 Qué verificar:
-- **Pantalla:** orientación, espejado y colores. Si algo falla, ajustar `DISPLAY_MIRROR_X/Y`, `DISPLAY_INVERT_COLOR` o `DISPLAY_RGB_ORDER` en `main/boards/esp32-2432s028/config.h`.
+- **Pantalla:** confirmada el 2026-11-09 (`DISPLAY_MIRROR_X false`, `DISPLAY_INVERT_COLOR false`).
 - **WiFi:** la placa crea la red `Heimdall-XXXX`; conectarse a ella y configurar el WiFi de casa.
 - **Servidor:** la pantalla muestra un código de 6 dígitos; activar el dispositivo en xiaozhi.me (ver "Servidor" abajo).
 - **Botón BOOT:** que cambie el estado del chat.
@@ -74,13 +74,14 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 | Equipo | ESP-IDF | Puerto serie | Notas |
 |---|---|---|---|
 | Ubuntu | v6.1.0 en `~/esp/esp-idf-v6.1` (cmake/ninja vía `idf_tools.py install cmake ninja`) | — | Identidad git local: Esteban RD <eruizpy@gmail.com>. Para grabar falta el grupo `dialout`. |
-| MacBook | v6.1 en `~/esp/esp-idf-v6.1` (instalado 2026-11-09); `ninja`, `dfu-util`, `clang-format` vía Homebrew | — | Disco casi lleno (~18 GB libres). Tests de host: 147 OK. |
+| MacBook | v6.1 en `~/esp/esp-idf-v6.1` (instalado 2026-11-09); `ninja`, `dfu-util`, `clang-format` vía Homebrew | `/dev/cu.usbserial-10` (CH340, driver de Apple) | Disco casi lleno (~18 GB libres). Tests de host: 147 OK. |
 
 ## Pendientes
 
 - [x] Elegir placa/hardware objetivo.
 - [x] Instalar ESP-IDF v6.1 en la MacBook.
-- [ ] Probar en hardware: pantalla (mirror/invert/RGB en `config.h`), micrófono y parlante.
+- [x] Probar en hardware: pantalla, WiFi y conexión al servidor (2026-11-09).
+- [ ] Probar en hardware: táctil y BOOT (después de activar), micrófono y parlante.
 - [ ] Mejor audio: amplificador I2S MAX98357A + parlante de 4–8 Ω/3 W (en evaluación, ver bitácora).
 - [ ] Batería: LiPo 1S + módulo de carga USB-C con salida de 5 V (en evaluación, ver bitácora).
 - [x] Táctil XPT2046: tocar = botón BOOT (falta probar en hardware).
@@ -92,6 +93,13 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Instalar clang-format (MacBook, Homebrew).
 
 ## Bitácora
+
+### 2026-11-09 — MacBook (primera prueba en hardware)
+- Grabada la CYD2USB (ESP32-D0WD-V3). Arranque limpio, ~128 KB de RAM libre con WiFi; red `Heimdall-42F9`.
+- Pantalla: venía espejada en horizontal y con colores invertidos; corregido en `config.h`.
+- WiFi de casa configurado desde el portal; OTA en api.tenclass.net responde; queda esperando activación.
+- macOS: la placa no crea `/dev/cu.usbserial-*` hasta permitir el accesorio USB (Privacidad y seguridad) y reconectarla.
+- `idf.py flash` falla tras `scripts/build.py` por diferencia `python`/`python3` en el entorno; grabar desde `build/` con `python -m esptool --chip esp32 -p <puerto> -b 460800 --before default-reset --after hard-reset write-flash "@flash_args"`.
 
 ### 2026-11-09 — MacBook
 - Revisión del proyecto. Instalados ESP-IDF v6.1, ninja, dfu-util y clang-format.
