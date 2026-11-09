@@ -62,6 +62,7 @@ Si macOS no detecta la placa: puede faltar el driver CH340/CH341 (en macOS recie
 | 2026-11-09 | La URL del servidor no se commitea: `scripts/build.py` la toma de `HEIMDALL_OTA_URL` (exportarla antes de compilar: `export HEIMDALL_OTA_URL=https://<dominio>/xiaozhi/ota/`). Para los scripts del VPS: `export HEIMDALL_VPS=root@<ip-vps>`. Dominio e IP reales: solo en tu gestor de contraseñas / notas privadas. |
 | 2026-11-09 | Caddy usa certificados RSA-2048 (`key_type rsa2048`): la ESP32 acelera RSA por hardware pero verifica la cadena ECDSA P-384 de Let's Encrypt por software (~3 s por conexión TLS). |
 | 2026-11-09 | Robot: la CYD pasa a ser la cara (pantalla + touch con coordenadas) conectada por UART (CN1) a un core ESP32-S3 N16R8 con voz, cabeza pan-tilt (2 servos por LEDC) y hexápodo (18 MG90S por 2× PCA9685). La CYD standalone actual se conserva como variante. |
+| 2026-11-09 | **No se usa GitHub Actions.** El CI es local (`scripts/ci.sh`, hook de pre-push). |
 | 2026-11-09 | Migración a AWS: región `us-east-1`, por disponibilidad de todos los servicios (AWS IoT, Bedrock, Transcribe, Polly) en lugar de `sa-east-1`. |
 | 2026-11-09 | Si se agrega el MAX98357A, va como variante/placa nueva (no cambiar pines de una placa existente: afecta OTA). Pines libres escasos: definir el pin de datos antes de comprar. |
 
@@ -110,7 +111,6 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - [x] Respaldos automáticos del VPS: diarios a las 03:30, 14 días, restauración probada (2026-11-09).
 - [x] Copia de los respaldos fuera del VPS: `deploy/vps/pull-backups.sh` → `~/heimdall-backups/` (correr cada tanto; primera copia en la MacBook el 2026-11-09).
 - [x] Instalar clang-format (MacBook, Homebrew).
-- [ ] Revisar la facturación de GitHub Actions (las corridas no arrancan por pagos/límite de gasto).
 - [ ] Migración a AWS IoT: 8 fases (preparación, identidad, estado, OTA, voz, consola, seguridad, corte), detalladas en el README.
 
 ## Bitácora
@@ -119,7 +119,7 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 - Proceso documentado en `docs/specs/README.md`; especificaciones retroactivas 001 (consultas de texto), 002 (cara) y 003 (servidor y configuración privada).
 - TDD: tests de host con Unity en `tests/host/` (protocolo de la cara, expresiones, calibración, saneamiento de texto) y `scripts/tests/test_heimdall.py`. La lógica pasó a módulos puros (`face_proto`, `face_expr`, `touch_calib`, `text_query.h`).
 - El test de expresiones encontró un bug real: `{"t":"emo","v":""}` dejaba la cara en un bucle infinito. Corregido y verificado en la placa (HIL).
-- CI `heimdall-ci.yml`: tests, formato (clang-format 23.1.5) y compilación de los dos firmwares. El workflow de la matriz completa quedó manual. Ojo: las corridas de Actions venían fallando por facturación de la cuenta (límite de gasto/pagos), no por el código.
+- CI: primero se agregó un workflow de GitHub Actions; se reemplazó el mismo día por el CI local `scripts/ci.sh` + hook `.githooks/pre-push`, porque el proyecto no usa GitHub Actions.
 - Versión `v0.1.0` con `CHANGELOG.md`.
 
 ### 2026-11-09 — MacBook (cara del robot)

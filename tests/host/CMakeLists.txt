@@ -11,14 +11,12 @@ include(FetchContent)
 FetchContent_Declare(unity
     GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
     GIT_TAG v2.6.0)
+# SOURCE_SUBDIR points nowhere so only the sources are fetched (cJSON's own build is not needed).
 FetchContent_Declare(cjson
     GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-    GIT_TAG v1.7.19)
-FetchContent_MakeAvailable(unity)
-FetchContent_GetProperties(cjson)
-if(NOT cjson_POPULATED)
-    FetchContent_Populate(cjson)
-endif()
+    GIT_TAG v1.7.19
+    SOURCE_SUBDIR do-not-build)
+FetchContent_MakeAvailable(unity cjson)
 
 # cJSON as the firmware uses it (only the core file, warnings of third-party code relaxed).
 add_library(cjson_host STATIC ${cjson_SOURCE_DIR}/cJSON.c)

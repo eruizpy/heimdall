@@ -23,8 +23,9 @@ El proceso completo está en `docs/specs/README.md`. Reglas obligatorias:
 
 1. **SDD:** ninguna funcionalidad nueva se implementa sin `docs/specs/NNN-nombre/spec.md` (requisitos y criterios de aceptación), `plan.md` y `tasks.md`, y sin la aprobación del usuario sobre la especificación.
 2. **TDD:** para cada tarea, primero el test que falla, después el código mínimo, después el refactor. La lógica se separa del hardware para testearla en la computadora (`tests/host/`, Unity); las herramientas se testean en `scripts/tests/`.
-3. **Definición de terminado:** criterios de aceptación cumplidos; tests nuevos y existentes en verde (`ctest --test-dir build-host`, `python3 -m unittest discover -s scripts/tests`); formato con `clang-format` 23.1.5; firmwares compilando; CI (`.github/workflows/heimdall-ci.yml`) en verde; pruebas de hardware registradas en `PROGRESS.md`; documentación y `CHANGELOG.md` al día.
-4. **Versionado:** semver con tags `vX.Y.Z` y entrada en `CHANGELOG.md` al cerrar cada etapa.
+3. **Definición de terminado:** criterios de aceptación cumplidos; tests nuevos y existentes en verde; formato con `clang-format` 23.1.5; firmwares compilando: todo eso lo verifica `scripts/ci.sh` (con ESP-IDF cargado), que debe terminar en `CI OK` antes de dar algo por hecho; pruebas de hardware registradas en `PROGRESS.md`; documentación y `CHANGELOG.md` al día.
+4. **Sin GitHub Actions:** el proyecto **no usa GitHub Actions** ni otro CI en la nube. El CI es local: `scripts/ci.sh` (completo) y el hook `.githooks/pre-push` (rápido). En cada clon, activarlo una vez con `git config core.hooksPath .githooks`. No agregar ni habilitar workflows en `.github/workflows/`.
+5. **Versionado:** semver con tags `vX.Y.Z` y entrada en `CHANGELOG.md` al cerrar cada etapa.
 
 ## Commits y datos privados
 

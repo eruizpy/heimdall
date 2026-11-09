@@ -10,7 +10,7 @@ flowchart LR
     RED --> GREEN["5. Implementación<br/>hasta verde"]
     GREEN --> REF["6. Refactor"]
     REF --> RED
-    REF --> V["7. Verificación<br/>CI + hardware"]
+    REF --> V["7. Verificación<br/>CI local + hardware"]
     V --> DEP["8. Despliegue<br/>versión + changelog"]
     DEP --> M["9. Mantenimiento<br/>PROGRESS.md"]
 ```
@@ -35,7 +35,7 @@ Para cada tarea: escribir el test que falla (**rojo**), el código mínimo que l
 |---|---|---|---|
 | Unitarios de firmware | Lógica pura en C/C++: protocolos, cálculos, mapeos, cinemática | `tests/host/` (Unity) | `cmake -S tests/host -B build-host && cmake --build build-host && ctest --test-dir build-host` |
 | Unitarios de herramientas | Scripts de Python y sistema de compilación | `scripts/tests/` (unittest) | `python3 -m unittest discover -s scripts/tests` |
-| Compilación | Que cada firmware compile | CI | `scripts/build.py` y `idf.py build` |
+| Compilación | Que cada firmware compile | `scripts/ci.sh` | `scripts/build.py` y `idf.py build` |
 | Hardware en el circuito (HIL) | El firmware real responde por puerto serie | `scripts/heimdall_face.py`, `scripts/heimdall_ask.py` | Con la placa conectada |
 | Manual en hardware | Lo que no se automatiza: pantalla, audio, movimiento | Checklist del `spec.md` | Registro en `PROGRESS.md` |
 
@@ -47,7 +47,7 @@ Una tarea o funcionalidad está terminada cuando:
 
 1. La especificación está **Aprobada** y sus criterios de aceptación se cumplen.
 2. Los tests nuevos se escribieron antes del código y están en verde, igual que los existentes.
-3. El CI está en verde (tests, compilación de los firmwares y formato).
+3. El CI local termina en `CI OK`: `scripts/ci.sh` corre tests, formato y compilación de los dos firmwares. El proyecto **no usa GitHub Actions**; el hook `.githooks/pre-push` corre la versión rápida (tests y formato) antes de cada push.
 4. Lo que requiere hardware se probó y quedó registrado en `PROGRESS.md`.
 5. La documentación (README, specs, protocolos) refleja el cambio.
 6. El cambio está en `CHANGELOG.md`; si se publica, con su tag de versión.

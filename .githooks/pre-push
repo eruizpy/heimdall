@@ -1,0 +1,5 @@
+#!/bin/sh
+# Heimdall: run the quick local CI (tests and format) before every push.
+# Enable once per clone: git config core.hooksPath .githooks
+# Skip in an emergency: git push --no-verify
+exec "$(git rev-parse --show-toplevel)/scripts/ci.sh" --quick

@@ -278,7 +278,7 @@ cmake -S tests/host -B build-host && cmake --build build-host && ctest --test-di
 python3 -m unittest discover -s scripts/tests
 ```
 
-El proyecto sigue un ciclo **SDLC con SDD y TDD**: cada funcionalidad tiene especificación, plan y tareas en [docs/specs](docs/specs/README.md), los tests se escriben antes que el código y el CI ([heimdall-ci.yml](.github/workflows/heimdall-ci.yml)) corre tests, formato y compilación de los firmwares en cada push. Cambios por versión en [CHANGELOG.md](CHANGELOG.md).
+El proyecto sigue un ciclo **SDLC con SDD y TDD**: cada funcionalidad tiene especificación, plan y tareas en [docs/specs](docs/specs/README.md) y los tests se escriben antes que el código. El CI es **local** (sin GitHub Actions): `scripts/ci.sh` corre tests, formato y compilación de los dos firmwares, y el hook de pre-push corre la versión rápida (activarlo una vez por clon con `git config core.hooksPath .githooks`). Cambios por versión en [CHANGELOG.md](CHANGELOG.md).
 
 Probar sin micrófono:
 

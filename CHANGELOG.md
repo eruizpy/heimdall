@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Cambiado
+- El CI pasa a ser local: `scripts/ci.sh` (tests, formato y firmwares) y el hook `.githooks/pre-push`. El proyecto no usa GitHub Actions.
+
+### Eliminado
+- Workflow `heimdall-ci.yml` de GitHub Actions; `build.yml` vuelve a su versión original.
+
 ## [0.1.0] — 2026-11-09
 
 Primera versión de Heimdall: asistente de voz en la ESP32-2432S028 con servidor propio, cara del robot y proceso de desarrollo SDD/TDD.
