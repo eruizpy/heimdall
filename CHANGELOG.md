@@ -7,6 +7,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 ### Cambiado
 - El CI pasa a ser local: `scripts/ci.sh` (tests, formato y firmwares) y el hook `.githooks/pre-push`. El proyecto no usa GitHub Actions.
 
+### Corregido
+- `scripts/ci.sh` borra las variables de entorno de git que exporta un hook: dentro del pre-push, los tests que crean repos temporales actuaban sobre el repo real (marcaron `core.bare=true` y cambiaron `user.name`).
+
 ### Eliminado
 - Workflow `heimdall-ci.yml` de GitHub Actions; `build.yml` vuelve a su versión original.
 

@@ -115,6 +115,11 @@ El nombre al hablar, la personalidad, la voz y el modelo de IA se configuran en 
 
 ## Bitácora
 
+### 2026-11-09 — MacBook (hook de pre-push)
+- El primer push con el hook falló y además los tests de `test_ci_selection` (que crean repos temporales) heredaron `GIT_DIR` del hook y modificaron la configuración del repo: `core.bare=true` y `user.name`/`user.email` = "CI test". Se restauró a mano (`core.bare=false`, `eruizpy <eruizpy@gmail.com>`); commits y ramas intactos, `git fsck` limpio.
+- Corrección: `scripts/ci.sh` hace `unset $(git rev-parse --local-env-vars)` al empezar. Verificado en un clon descartable con el entorno de un hook.
+- Si en otro equipo aparece "this operation must be run in a work tree": `git config core.bare false` y revisar `git config user.name`.
+
 ### 2026-11-09 — MacBook (proceso SDD/TDD, v0.1.0)
 - Proceso documentado en `docs/specs/README.md`; especificaciones retroactivas 001 (consultas de texto), 002 (cara) y 003 (servidor y configuración privada).
 - TDD: tests de host con Unity en `tests/host/` (protocolo de la cara, expresiones, calibración, saneamiento de texto) y `scripts/tests/test_heimdall.py`. La lógica pasó a módulos puros (`face_proto`, `face_expr`, `touch_calib`, `text_query.h`).

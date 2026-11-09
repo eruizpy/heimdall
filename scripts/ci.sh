@@ -7,6 +7,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+# Git hooks export GIT_DIR, GIT_INDEX_FILE and friends. Tests that create temporary
+# repositories would otherwise run against this repository (and once set core.bare and
+# user.name here). Clear them before running anything.
+# shellcheck disable=SC2046
+unset $(git rev-parse --local-env-vars)
+
 CLANG_FORMAT_VERSION=23.1.5
 FORMAT_FILES="face/main/*.c face/main/*.h main/text_query.h tests/host/*.c tests/host/*.cc
 main/boards/esp32-2432s028/*.cc main/boards/esp32-2432s028/*.h"
